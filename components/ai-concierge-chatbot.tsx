@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { useChat } from 'ai/react'
+import { useChat } from '@ai-sdk/react'
 import { useCart } from '@/components/cart-provider'
 import gsap from 'gsap'
 import { MessageSquare, X, Send, Bot, ShoppingCart } from 'lucide-react'
