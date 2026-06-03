@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.79",
+<<<<<<< HEAD
     "@ai-sdk/react": "^3.0.195",
+=======
+    "@ai-sdk/react": "^3.0.197",
+>>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -76,4 +80,8 @@
     "tw-animate-css": "1.3.3",
     "typescript": "5.7.3"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> e0478cd (improvements on AI and nearest branch evaluation)

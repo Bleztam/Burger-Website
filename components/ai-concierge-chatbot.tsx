@@ -13,15 +13,35 @@ export function AiConciergeChatbot() {
   const toggleBtnRef = useRef<HTMLButtonElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+<<<<<<< HEAD
   // Track already processed cart tool calls to avoid duplicate cart additions
   const [processedToolCalls, setProcessedToolCalls] = useState<Set<string>>(new Set())
 
   // Initialize Vercel AI SDK Client hook
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+=======
+  const [inputVal, setInputVal] = useState('')
+  const [processedToolCalls, setProcessedToolCalls] = useState<Set<string>>(new Set())
+
+  // Initialize Vercel AI SDK Client hook
+  const { messages, sendMessage, status } = useChat({
+>>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
     api: '/api/chat',
     maxSteps: 5, // allows tool-calls to execute and loop
   })
 
+<<<<<<< HEAD
+=======
+  const isLoading = status === 'submitted' || status === 'streaming'
+
+  const handleLocalSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inputVal.trim() || isLoading) return
+    sendMessage({ text: inputVal })
+    setInputVal('')
+  }
+
+>>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
   // Scroll to bottom of chat automatically when messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -189,16 +209,27 @@ export function AiConciergeChatbot() {
         </div>
 
         {/* Input area */}
+<<<<<<< HEAD
         <form onSubmit={handleSubmit} className="p-4 border-t border-neutral-800/80 bg-neutral-950 flex gap-2">
           <input
             value={input}
             onChange={handleInputChange}
+=======
+        <form onSubmit={handleLocalSubmit} className="p-4 border-t border-neutral-800/80 bg-neutral-950 flex gap-2">
+          <input
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+>>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
             placeholder="I have R$ 40 and love spicy food..."
             className="flex-1 bg-neutral-900 border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-amber-500 transition-colors"
           />
           <button
             type="submit"
+<<<<<<< HEAD
             disabled={!input.trim() || isLoading}
+=======
+            disabled={!inputVal.trim() || isLoading}
+>>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
             className="w-10 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer"
           >
             <Send size={14} />

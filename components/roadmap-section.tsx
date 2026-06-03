@@ -106,6 +106,41 @@ export function RoadmapSection() {
     fetchBranches()
   }, [])
 
+<<<<<<< HEAD
+=======
+  // Helper to calculate nearest branch
+  const calculateNearest = (latitude: number, longitude: number) => {
+    let minDistance = Infinity
+    let nearest: DBBranch | null = null
+
+    branches.forEach((branch) => {
+      if (branch.status === 'LOCKED') return
+      
+      const R = 6371 // Earth radius in km
+      const dLat = ((branch.latitude - latitude) * Math.PI) / 180
+      const dLon = ((branch.longitude - longitude) * Math.PI) / 180
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((latitude * Math.PI) / 180) *
+          Math.cos((branch.latitude * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2)
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      const distance = R * c
+
+      if (distance < minDistance) {
+        minDistance = distance
+        nearest = branch
+      }
+    })
+
+    if (nearest) {
+      setClosestBranch(nearest)
+      setSelectedBranch(nearest)
+    }
+  }
+
+>>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
   // 2. Geolocation & Haversine Formula calculation
   const requestLocation = () => {
     if (!navigator.geolocation) {
@@ -118,6 +153,7 @@ export function RoadmapSection() {
         const { latitude, longitude } = position.coords
         setUserLocation({ latitude, longitude })
         setLocationStatus('granted')
+<<<<<<< HEAD
 
         // Haversine calculation to find the closest unlocked branch
         let minDistance = Infinity
@@ -153,6 +189,41 @@ export function RoadmapSection() {
       (error) => {
         console.error('Error requesting location:', error)
         setLocationStatus('denied')
+=======
+        calculateNearest(latitude, longitude)
+      },
+      async (error) => {
+        console.error('Error requesting location:', error.message || error)
+        
+        // Try fallback to IP Geolocation if primary browser API fails or lacks permission
+        try {
+          const res = await fetch('https://ipapi.co/json/')
+          if (res.ok) {
+            const data = await res.json()
+            if (data && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+              const { latitude, longitude } = data
+              setUserLocation({ latitude, longitude })
+              setLocationStatus('granted')
+              calculateNearest(latitude, longitude)
+              return
+            }
+          }
+        } catch (ipErr) {
+          console.error('IP Geolocation fallback failed:', ipErr)
+        }
+
+        // Final fallback: Use default coords (Curitiba Centro)
+        const defaultLat = -25.4284
+        const defaultLon = -49.2733
+        setUserLocation({ latitude: defaultLat, longitude: defaultLon })
+        setLocationStatus('granted')
+        calculateNearest(defaultLat, defaultLon)
+      },
+      {
+        enableHighAccuracy: false, // Don't require GPS hardware, less prone to timeout on desktop
+        timeout: 5000,
+        maximumAge: 300000, // 5 minutes cache
+>>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
       }
     )
   }
