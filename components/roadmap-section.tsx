@@ -86,7 +86,10 @@ export function RoadmapSection() {
   const [locationStatus, setLocationStatus] = useState<'prompt' | 'granted' | 'denied'>('prompt')
   
   const [leafletLoaded, setLeafletLoaded] = useState(false)
-  const mapInstanceRef = useRef<any>(null)
+  const mapRef = useRef<any>(null)
+  const routeLayerRef = useRef<any>(null)
+  const branchMarkerRef = useRef<any>(null)
+  const userMarkerRef = useRef<any>(null)
 
   // 1. Fetch Branches from Supabase & Initialize Geolocation check
   useEffect(() => {
@@ -106,8 +109,6 @@ export function RoadmapSection() {
     fetchBranches()
   }, [])
 
-<<<<<<< HEAD
-=======
   // Helper to calculate nearest branch
   const calculateNearest = (latitude: number, longitude: number) => {
     let minDistance = Infinity
@@ -140,12 +141,45 @@ export function RoadmapSection() {
     }
   }
 
->>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
+  // Tiered fallback helper: Try free IP Geolocation API, with flagship coordinates as final safety net
+  const fallbackToIPGeolocation = async () => {
+    try {
+      const res = await fetch('https://ipapi.co/json/')
+      if (res.ok) {
+        const data = await res.json()
+        if (data && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+          const { latitude, longitude } = data
+          setUserLocation({ latitude, longitude })
+          setLocationStatus('granted')
+          calculateNearest(latitude, longitude)
+          return
+        }
+      }
+      throw new Error('IP Geolocation response invalid or empty')
+    } catch (ipErr) {
+      console.error('IP Geolocation fallback failed, using default flagship coordinates:', ipErr)
+      
+      // Ultimate Safe Fallback: Wolfsburger flagship restaurant (São José dos Pinhais)
+      const flagshipLat = -25.5349
+      const flagshipLon = -49.2008
+      setUserLocation({ latitude: flagshipLat, longitude: flagshipLon })
+      setLocationStatus('granted')
+      calculateNearest(flagshipLat, flagshipLon)
+    }
+  }
+
   // 2. Geolocation & Haversine Formula calculation
   const requestLocation = () => {
     if (!navigator.geolocation) {
       alert('Geolocation is not supported by your browser')
+      fallbackToIPGeolocation()
       return
+    }
+
+    const options = {
+      enableHighAccuracy: false, // Prevent triangulation timeouts on desktop
+      timeout: 6000,             // 6 seconds timeout limit
+      maximumAge: 600000,        // 10 minutes cache
     }
 
     navigator.geolocation.getCurrentPosition(
@@ -153,143 +187,115 @@ export function RoadmapSection() {
         const { latitude, longitude } = position.coords
         setUserLocation({ latitude, longitude })
         setLocationStatus('granted')
-<<<<<<< HEAD
-
-        // Haversine calculation to find the closest unlocked branch
-        let minDistance = Infinity
-        let nearest: DBBranch | null = null
-
-        branches.forEach((branch) => {
-          if (branch.status === 'LOCKED') return
-          
-          const R = 6371 // Earth radius in km
-          const dLat = ((branch.latitude - latitude) * Math.PI) / 180
-          const dLon = ((branch.longitude - longitude) * Math.PI) / 180
-          const a =
-            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos((latitude * Math.PI) / 180) *
-              Math.cos((branch.latitude * Math.PI) / 180) *
-              Math.sin(dLon / 2) *
-              Math.sin(dLon / 2)
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-          const distance = R * c
-
-          if (distance < minDistance) {
-            minDistance = distance
-            nearest = branch
-          }
-        })
-
-        if (nearest) {
-          setClosestBranch(nearest)
-          // Open map instantly for the closest branch to WOW the user
-          setSelectedBranch(nearest)
-        }
-      },
-      (error) => {
-        console.error('Error requesting location:', error)
-        setLocationStatus('denied')
-=======
         calculateNearest(latitude, longitude)
       },
-      async (error) => {
-        console.error('Error requesting location:', error.message || error)
-        
-        // Try fallback to IP Geolocation if primary browser API fails or lacks permission
-        try {
-          const res = await fetch('https://ipapi.co/json/')
-          if (res.ok) {
-            const data = await res.json()
-            if (data && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
-              const { latitude, longitude } = data
-              setUserLocation({ latitude, longitude })
-              setLocationStatus('granted')
-              calculateNearest(latitude, longitude)
-              return
-            }
-          }
-        } catch (ipErr) {
-          console.error('IP Geolocation fallback failed:', ipErr)
-        }
-
-        // Final fallback: Use default coords (Curitiba Centro)
-        const defaultLat = -25.4284
-        const defaultLon = -49.2733
-        setUserLocation({ latitude: defaultLat, longitude: defaultLon })
-        setLocationStatus('granted')
-        calculateNearest(defaultLat, defaultLon)
+      (error) => {
+        console.error('Error requesting location, initiating IP geolocation fallback:', error.message || error)
+        fallbackToIPGeolocation()
       },
-      {
-        enableHighAccuracy: false, // Don't require GPS hardware, less prone to timeout on desktop
-        timeout: 5000,
-        maximumAge: 300000, // 5 minutes cache
->>>>>>> e0478cd (improvements on AI and nearest branch evaluation)
-      }
+      options
     )
   }
 
   // 3. Dynamic Leaflet script injection to guarantee zero-build conflict in Next.js 16 / React 19
   useEffect(() => {
-    if (leafletLoaded || !selectedBranch) return
+    if (typeof window === 'undefined') return
+    if ((window as any).L) {
+      setLeafletLoaded(true)
+      return
+    }
 
-    // Injects Leaflet CSS
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-    link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY='
-    link.crossOrigin = 'anonymous'
-    document.head.appendChild(link)
+    const cssId = 'leaflet-css'
+    if (!document.getElementById(cssId)) {
+      const link = document.createElement('link')
+      link.id = cssId
+      link.rel = 'stylesheet'
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+      link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY='
+      link.crossOrigin = 'anonymous'
+      document.head.appendChild(link)
+    }
 
-    // Injects Leaflet JS Script
-    const script = document.createElement('script')
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-    script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='
-    script.crossOrigin = 'anonymous'
-    script.onload = () => {
+    const scriptId = 'leaflet-js'
+    let script = document.getElementById(scriptId) as HTMLScriptElement
+    if (!script) {
+      script = document.createElement('script')
+      script.id = scriptId
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+      script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='
+      script.crossOrigin = 'anonymous'
+      script.onload = () => {
+        setLeafletLoaded(true)
+      }
+      document.head.appendChild(script)
+    } else {
       setLeafletLoaded(true)
     }
-    document.head.appendChild(script)
+  }, [])
 
-    return () => {
-      // Clean up stylesheets if component unmounts
-      if (document.head.contains(link)) document.head.removeChild(link)
-      if (document.head.contains(script)) document.head.removeChild(script)
-    }
-  }, [selectedBranch, leafletLoaded])
-
-  // 4. Draw Map with Route when leaflet loads or chosen branch changes
+  // 4. Draw Map with Route when leaflet loads or chosen branch/userLocation changes
   useEffect(() => {
-    if (!leafletLoaded || !selectedBranch || !mapContainerRef.current) return
+    if (typeof window === 'undefined') return
+    if (!leafletLoaded || !selectedBranch) return
 
     const L = (window as any).L
     if (!L) return
 
-    // Destroy existing map instance to avoid container reuse errors
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove()
-      mapInstanceRef.current = null
+    // Clean up if container is missing or changed
+    if (!mapContainerRef.current) {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+      routeLayerRef.current = null
+      branchMarkerRef.current = null
+      userMarkerRef.current = null
+      return
+    }
+
+    let map = mapRef.current
+    if (map) {
+      const container = map.getContainer()
+      if (container !== mapContainerRef.current) {
+        map.remove()
+        map = null
+        mapRef.current = null
+        routeLayerRef.current = null
+        branchMarkerRef.current = null
+        userMarkerRef.current = null
+      }
     }
 
     const branchCoords: [number, number] = [selectedBranch.latitude, selectedBranch.longitude]
-    const centerCoords: [number, number] = userLocation 
-      ? [(userLocation.latitude + selectedBranch.latitude) / 2, (userLocation.longitude + selectedBranch.longitude) / 2]
-      : branchCoords
 
-    // Initialize Map Instance
-    const map = L.map(mapContainerRef.current, {
-      zoomControl: false,
-      scrollWheelZoom: false,
-    }).setView(centerCoords, userLocation ? 12 : 14)
+    if (!map) {
+      // Initialize Map Instance
+      map = L.map(mapContainerRef.current, {
+        zoomControl: false,
+        scrollWheelZoom: false,
+      })
 
-    // Use absolute dark premium carto tiles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; CartoDB',
-      maxZoom: 20
-    }).addTo(map)
+      // Use absolute dark premium carto tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB',
+        maxZoom: 20
+      }).addTo(map)
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map)
+      L.control.zoom({ position: 'bottomright' }).addTo(map)
+      mapRef.current = map
 
-    // Custom Icon styles
+      // GSAP Reveal animation for the Map Panel
+      gsap.fromTo(mapContainerRef.current, 
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
+      )
+    }
+
+    // Update branch marker
+    if (branchMarkerRef.current) {
+      map.removeLayer(branchMarkerRef.current)
+    }
+
     const branchIcon = L.divIcon({
       className: 'custom-map-icon-branch',
       html: `<div class="w-8 h-8 rounded-full bg-amber-500 border-4 border-black flex items-center justify-center font-bold text-black shadow-lg animate-pulse">W</div>`,
@@ -297,26 +303,36 @@ export function RoadmapSection() {
       iconAnchor: [16, 16],
     })
 
-    const userIcon = L.divIcon({
-      className: 'custom-map-icon-user',
-      html: `<div class="w-6 h-6 rounded-full bg-red-500 border-3 border-white shadow-md flex items-center justify-center font-bold text-white text-[10px]">YOU</div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-    })
-
-    // Add branch marker
-    L.marker(branchCoords, { icon: branchIcon }).addTo(map)
+    branchMarkerRef.current = L.marker(branchCoords, { icon: branchIcon }).addTo(map)
       .bindPopup(`<strong class="text-neutral-900">${selectedBranch.name}</strong><br/><span class="text-neutral-600">${selectedBranch.address}</span>`)
       .openPopup()
 
-    // Add User Marker and Routing Polyline if coordinates exist
+    // Update user marker
+    if (userMarkerRef.current) {
+      map.removeLayer(userMarkerRef.current)
+      userMarkerRef.current = null
+    }
+
+    // Layer Cleanup Execution: check if routeLayerRef.current exists and remove it
+    if (routeLayerRef.current) {
+      map.removeLayer(routeLayerRef.current)
+      routeLayerRef.current = null
+    }
+
     if (userLocation) {
       const userCoords: [number, number] = [userLocation.latitude, userLocation.longitude]
-      L.marker(userCoords, { icon: userIcon }).addTo(map)
+      const userIcon = L.divIcon({
+        className: 'custom-map-icon-user',
+        html: `<div class="w-6 h-6 rounded-full bg-red-500 border-3 border-white shadow-md flex items-center justify-center font-bold text-white text-[10px]">YOU</div>`,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      })
+
+      userMarkerRef.current = L.marker(userCoords, { icon: userIcon }).addTo(map)
         .bindPopup(`<span class="text-neutral-900">Your Location</span>`)
 
       // Drawing a premium routing polyline
-      const routeLine = L.polyline([userCoords, branchCoords], {
+      routeLayerRef.current = L.polyline([userCoords, branchCoords], {
         color: '#f59e0b', // amber-500
         weight: 4,
         dashArray: '8, 8', // dashed design for transit theme
@@ -325,18 +341,31 @@ export function RoadmapSection() {
 
       // Fit map bounds to encompass both markers comfortably
       map.fitBounds(L.latLngBounds([userCoords, branchCoords]), {
-        padding: [50, 50]
+        padding: [50, 50],
+        animate: true,
+        duration: 1.0
+      })
+    } else {
+      // Just fly to/center on branch coords if user location is not yet available
+      map.setView(branchCoords, 14, {
+        animate: true,
+        duration: 1.0
       })
     }
-
-    mapInstanceRef.current = map
-
-    // GSAP Reveal animation for the Map Panel
-    gsap.fromTo(mapContainerRef.current, 
-      { opacity: 0, y: 15 },
-      { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }
-    )
   }, [leafletLoaded, selectedBranch, userLocation])
+
+  // Cleanup map when component unmounts
+  useEffect(() => {
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove()
+        mapRef.current = null
+      }
+      routeLayerRef.current = null
+      branchMarkerRef.current = null
+      userMarkerRef.current = null
+    }
+  }, [])
 
   // 5. GSAP Entrance ScrollTrigger Animations (Preserves original aesthetics flawlessly)
   useEffect(() => {
