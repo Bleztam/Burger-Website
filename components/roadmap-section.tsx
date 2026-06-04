@@ -73,6 +73,13 @@ const staticFallbackBranches: DBBranch[] = [
 ]
 
 export function RoadmapSection() {
+  const [isDarkMode, setIsDarkMode] = useState(true)
+  const isDarkModeRef = useRef(isDarkMode)
+
+  useEffect(() => {
+    isDarkModeRef.current = isDarkMode
+  }, [isDarkMode])
+
   const sectionRef = useRef<HTMLElement>(null)
   const pathRef = useRef<SVGPathElement>(null)
   const nodesRef = useRef<(HTMLDivElement | null)[]>([])
@@ -87,6 +94,7 @@ export function RoadmapSection() {
   
   const [leafletLoaded, setLeafletLoaded] = useState(false)
   const mapRef = useRef<any>(null)
+  const tileLayerRef = useRef<any>(null)
   const routeLayerRef = useRef<any>(null)
   const branchMarkerRef = useRef<any>(null)
   const userMarkerRef = useRef<any>(null)
@@ -197,38 +205,65 @@ export function RoadmapSection() {
     )
   }
 
-  // 3. Dynamic Leaflet script injection to guarantee zero-build conflict in Next.js 16 / React 19
+  // 3. Dynamic Leaflet script and stylesheet injection to guarantee zero-build conflict and correct layout rendering
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if ((window as any).L) {
-      setLeafletLoaded(true)
-      return
-    }
 
     const cssId = 'leaflet-css'
-    if (!document.getElementById(cssId)) {
-      const link = document.createElement('link')
+    const scriptId = 'leaflet-js'
+    
+    let cssLoaded = false
+    let jsLoaded = false
+
+    const checkReady = () => {
+      if (cssLoaded && jsLoaded) {
+        setLeafletLoaded(true)
+      }
+    }
+
+    // Check if stylesheet is already in document
+    let link = document.getElementById(cssId) as HTMLLinkElement | null
+    if (link) {
+      cssLoaded = true
+    } else {
+      link = document.createElement('link')
       link.id = cssId
       link.rel = 'stylesheet'
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
       link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY='
       link.crossOrigin = 'anonymous'
+      link.onload = () => {
+        cssLoaded = true
+        checkReady()
+      }
       document.head.appendChild(link)
     }
 
-    const scriptId = 'leaflet-js'
-    let script = document.getElementById(scriptId) as HTMLScriptElement
-    if (!script) {
-      script = document.createElement('script')
-      script.id = scriptId
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-      script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='
-      script.crossOrigin = 'anonymous'
-      script.onload = () => {
-        setLeafletLoaded(true)
-      }
-      document.head.appendChild(script)
+    // Check if JS is already in window
+    if ((window as any).L) {
+      jsLoaded = true
     } else {
+      let script = document.getElementById(scriptId) as HTMLScriptElement | null
+      if (script) {
+        script.addEventListener('load', () => {
+          jsLoaded = true
+          checkReady()
+        })
+      } else {
+        script = document.createElement('script')
+        script.id = scriptId
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+        script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo='
+        script.crossOrigin = 'anonymous'
+        script.onload = () => {
+          jsLoaded = true
+          checkReady()
+        }
+        document.head.appendChild(script)
+      }
+    }
+
+    if (cssLoaded && jsLoaded) {
       setLeafletLoaded(true)
     }
   }, [])
@@ -247,6 +282,7 @@ export function RoadmapSection() {
         mapRef.current.remove()
         mapRef.current = null
       }
+      tileLayerRef.current = null
       routeLayerRef.current = null
       branchMarkerRef.current = null
       userMarkerRef.current = null
@@ -260,6 +296,7 @@ export function RoadmapSection() {
         map.remove()
         map = null
         mapRef.current = null
+        tileLayerRef.current = null
         routeLayerRef.current = null
         branchMarkerRef.current = null
         userMarkerRef.current = null
@@ -275,14 +312,25 @@ export function RoadmapSection() {
         scrollWheelZoom: false,
       })
 
-      // Use absolute dark premium carto tiles
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      const tileUrl = isDarkModeRef.current
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+
+      // Initialize tile layer with dynamic url and track via tileLayerRef
+      tileLayerRef.current = L.tileLayer(tileUrl, {
         attribution: '&copy; CartoDB',
         maxZoom: 20
       }).addTo(map)
 
       L.control.zoom({ position: 'bottomright' }).addTo(map)
       mapRef.current = map
+
+      // Force size recalculation to prevent visual collapse in hidden layouts
+      setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.invalidateSize()
+        }
+      }, 100)
 
       // GSAP Reveal animation for the Map Panel
       gsap.fromTo(mapContainerRef.current, 
@@ -298,7 +346,7 @@ export function RoadmapSection() {
 
     const branchIcon = L.divIcon({
       className: 'custom-map-icon-branch',
-      html: `<div class="w-8 h-8 rounded-full bg-amber-500 border-4 border-black flex items-center justify-center font-bold text-black shadow-lg animate-pulse">W</div>`,
+      html: `<div class="w-8 h-8 rounded-full bg-amber-500 border-4 border-neutral-900 dark:border-neutral-950 flex items-center justify-center font-bold text-black shadow-lg animate-pulse">W</div>`,
       iconSize: [32, 32],
       iconAnchor: [16, 16],
     })
@@ -331,9 +379,9 @@ export function RoadmapSection() {
       userMarkerRef.current = L.marker(userCoords, { icon: userIcon }).addTo(map)
         .bindPopup(`<span class="text-neutral-900">Your Location</span>`)
 
-      // Drawing a premium routing polyline
+      // Drawing a premium routing polyline with contrast tuning
       routeLayerRef.current = L.polyline([userCoords, branchCoords], {
-        color: '#f59e0b', // amber-500
+        color: isDarkModeRef.current ? '#f59e0b' : '#1e3a8a',
         weight: 4,
         dashArray: '8, 8', // dashed design for transit theme
         opacity: 0.8
@@ -352,7 +400,38 @@ export function RoadmapSection() {
         duration: 1.0
       })
     }
+
+    // Force GSAP ScrollTrigger to recalculate alignment coordinates after layout changes
+    ScrollTrigger.refresh()
+    const timer = setTimeout(() => {
+      ScrollTrigger.refresh()
+    }, 200)
+    return () => clearTimeout(timer)
   }, [leafletLoaded, selectedBranch, userLocation])
+
+  // Theme Toggle Effect - swap tile layer URL and polyline style smoothly
+  useEffect(() => {
+    const tileUrl = isDarkMode
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+
+    if (tileLayerRef.current) {
+      tileLayerRef.current.setUrl(tileUrl)
+    }
+
+    if (routeLayerRef.current) {
+      routeLayerRef.current.setStyle({
+        color: isDarkMode ? '#f59e0b' : '#1e3a8a'
+      })
+    }
+
+    // Recalculate GSAP ScrollTrigger timeline track line dimensions
+    ScrollTrigger.refresh()
+    const timer = setTimeout(() => {
+      ScrollTrigger.refresh()
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [isDarkMode])
 
   // Cleanup map when component unmounts
   useEffect(() => {
@@ -361,6 +440,7 @@ export function RoadmapSection() {
         mapRef.current.remove()
         mapRef.current = null
       }
+      tileLayerRef.current = null
       routeLayerRef.current = null
       branchMarkerRef.current = null
       userMarkerRef.current = null
@@ -457,7 +537,9 @@ export function RoadmapSection() {
     <section
       ref={sectionRef}
       id="roadmap-section"
-      className="relative py-20 md:py-32 px-4 md:px-12 overflow-hidden bg-neutral-950"
+      className={`relative py-20 md:py-32 px-4 md:px-12 overflow-hidden transition-colors duration-500 ${
+        isDarkMode ? 'dark bg-neutral-950 text-white' : 'bg-neutral-50 text-neutral-900'
+      }`}
     >
       {/* Section Header */}
       <div className="max-w-screen-xl mx-auto mb-12 md:mb-20 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -465,29 +547,56 @@ export function RoadmapSection() {
           <p className="text-amber-500 text-xs md:text-sm font-medium tracking-widest uppercase mb-2 md:mb-4">
             Find Us
           </p>
-          <h2 className="font-display text-4xl md:text-fluid-section text-foreground uppercase leading-none">
+          <h2 className="font-display text-4xl md:text-fluid-section text-neutral-900 dark:text-white uppercase leading-none">
             Our <span className="text-amber-500">Locations</span>
           </h2>
         </div>
 
-        {/* Location Permission Activator */}
-        <button
-          onClick={requestLocation}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-semibold transition-all duration-300 text-sm tracking-wide shadow-lg group hover:scale-[1.03] active:scale-[0.98]"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            className="group-hover:rotate-12 transition-transform duration-300"
+        {/* Location Permission Activator & Theme Toggle */}
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Local Theme Toggle Button */}
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-neutral-300 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-700 dark:text-neutral-300 font-semibold transition-all duration-300 text-sm tracking-wide shadow-md group hover:scale-[1.03] active:scale-[0.98]"
+            title="Toggle Section Map Theme"
           >
-            <polygon points="3 11 22 2 13 21 11 13 3 11" />
-          </svg>
-          {locationStatus === 'granted' ? 'Location Shared' : 'Find Nearest Branch'}
-        </button>
+            {isDarkMode ? (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-amber-500 animate-[spin_10s_linear_infinite]">
+                  <circle cx="12" cy="12" r="4"/>
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                </svg>
+                <span>Light Theme</span>
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-indigo-500">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                </svg>
+                <span>Dark Theme</span>
+              </>
+            )}
+          </button>
+
+          {/* Location Permission Activator */}
+          <button
+            onClick={requestLocation}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-semibold transition-all duration-300 text-sm tracking-wide shadow-lg group hover:scale-[1.03] active:scale-[0.98]"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              className="group-hover:rotate-12 transition-transform duration-300"
+            >
+              <polygon points="3 11 22 2 13 21 11 13 3 11" />
+            </svg>
+            {locationStatus === 'granted' ? 'Location Shared' : 'Find Nearest Branch'}
+          </button>
+        </div>
       </div>
 
       {/* Geolocation feedback alert */}
@@ -495,7 +604,7 @@ export function RoadmapSection() {
         <div className="max-w-screen-md mx-auto mb-10 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
-            <span className="text-sm text-neutral-200">
+            <span className="text-sm text-neutral-700 dark:text-neutral-200">
               Closest active branch found: <strong className="text-amber-500">{closestBranch.name}</strong>
             </span>
           </div>
@@ -511,15 +620,16 @@ export function RoadmapSection() {
       {/* Interactive Map Dashboard */}
       {selectedBranch && (
         <div className="max-w-screen-lg mx-auto mb-16">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden p-6 shadow-2xl relative">
-            <h3 className="font-display text-xl md:text-2xl uppercase tracking-wider text-amber-500 mb-2">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden p-6 shadow-2xl relative transition-colors duration-300">
+            <h3 className="font-display text-xl md:text-2xl uppercase tracking-wider text-amber-600 dark:text-amber-500 mb-2">
               Route to {selectedBranch.name}
             </h3>
-            <p className="text-xs text-neutral-400 mb-4">{selectedBranch.address} | Hours: {selectedBranch.hours}</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-4">{selectedBranch.address} | Hours: {selectedBranch.hours}</p>
 
             <div 
               ref={mapContainerRef} 
-              className="w-full h-[300px] md:h-[450px] rounded-xl border border-neutral-800 bg-neutral-950 relative overflow-hidden" 
+              id="wolf-map-container"
+              className="w-full h-[300px] md:h-[450px] rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-950 relative overflow-hidden" 
               style={{ zIndex: 1 }}
             />
           </div>
@@ -537,7 +647,7 @@ export function RoadmapSection() {
         >
           <path
             d="M50 0 L50 1000"
-            stroke="rgba(255,255,255,0.05)"
+            className="stroke-neutral-200 dark:stroke-neutral-800/40"
             strokeWidth="4"
             fill="none"
             strokeLinecap="round"
@@ -567,10 +677,10 @@ export function RoadmapSection() {
                 ref={(el) => { nodesRef.current[index] = el }}
                 className={`w-12 h-12 md:w-16 md:h-16 flex-shrink-0 md:absolute md:left-1/2 md:-translate-x-1/2 md:z-10 flex items-center justify-center rounded-full border-3 md:border-4 cursor-pointer transition-transform duration-300 hover:scale-110 ${
                   branch.status === 'LOCKED'
-                    ? 'bg-neutral-800 border-neutral-600'
+                    ? 'bg-neutral-100 dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600'
                     : selectedBranch?.id === branch.id
                       ? 'bg-amber-500 border-white shadow-[0_0_20px_rgba(245,158,11,0.6)]'
-                      : 'bg-neutral-950 border-amber-500'
+                      : 'bg-white dark:bg-neutral-950 border-amber-500'
                 }`}
                 onClick={() => branch.status !== 'LOCKED' && setSelectedBranch(branch)}
               >
@@ -609,16 +719,16 @@ export function RoadmapSection() {
                   onClick={() => branch.status !== 'LOCKED' && setSelectedBranch(branch)}
                   className={`p-4 md:p-6 rounded-2xl border cursor-pointer transition-all duration-300 ${
                     branch.status === 'LOCKED'
-                      ? 'bg-neutral-900/40 border-neutral-800/40 opacity-70'
+                      ? 'bg-neutral-100/40 dark:bg-neutral-900/40 border-neutral-200/40 dark:border-neutral-800/40 opacity-70'
                       : selectedBranch?.id === branch.id
-                        ? 'bg-neutral-900 border-amber-500/80 shadow-[0_10px_30px_rgba(245,158,11,0.15)] scale-[1.01]'
-                        : 'bg-neutral-900/60 border-neutral-800 hover:border-amber-500/40 hover:bg-neutral-900'
+                        ? 'bg-white dark:bg-neutral-900 border-amber-500 dark:border-amber-500 shadow-[0_10px_30px_rgba(245,158,11,0.15)] scale-[1.01]'
+                        : 'bg-white/60 dark:bg-neutral-900/60 border-neutral-200 dark:border-neutral-800 hover:border-amber-500/40 hover:bg-white dark:hover:bg-neutral-900'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-2 md:mb-3">
                     <h3
                       className={`font-display text-lg md:text-2xl uppercase leading-tight ${
-                        branch.status === 'LOCKED' ? 'text-neutral-500' : 'text-foreground'
+                        branch.status === 'LOCKED' ? 'text-neutral-400 dark:text-neutral-500' : 'text-neutral-900 dark:text-white'
                       }`}
                     >
                       {branch.name}
@@ -632,14 +742,14 @@ export function RoadmapSection() {
                   
                   <p
                     className={`text-xs md:text-sm mb-1 ${
-                      branch.status === 'LOCKED' ? 'text-neutral-600' : 'text-neutral-300'
+                      branch.status === 'LOCKED' ? 'text-neutral-450 dark:text-neutral-600' : 'text-neutral-600 dark:text-neutral-300'
                     }`}
                   >
                     {branch.address}
                   </p>
                   <p
                     className={`text-xs md:text-sm mb-3 md:mb-4 ${
-                      branch.status === 'LOCKED' ? 'text-neutral-600' : 'text-neutral-400'
+                      branch.status === 'LOCKED' ? 'text-neutral-450 dark:text-neutral-600' : 'text-neutral-500 dark:text-neutral-400'
                     }`}
                   >
                     {branch.hours}

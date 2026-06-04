@@ -17,7 +17,7 @@ export function AiConciergeChatbot() {
   const [processedToolCalls, setProcessedToolCalls] = useState<Set<string>>(new Set())
 
   // Initialize Vercel AI SDK Client hook
-  const { messages, sendMessage, status } = useChat({
+  const { messages, append, status } = useChat({
     api: '/api/chat',
     maxSteps: 5, // allows tool-calls to execute and loop
   })
@@ -27,7 +27,7 @@ export function AiConciergeChatbot() {
   const handleLocalSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputVal.trim() || isLoading) return
-    sendMessage({ text: inputVal })
+    append({ role: 'user', content: inputVal })
     setInputVal('')
   }
   // Scroll to bottom of chat automatically when messages arrive
@@ -150,9 +150,9 @@ export function AiConciergeChatbot() {
                   }`}
                 >
                   {/* Clean Text display with basic markdown fallback */}
-                  {message.content.split('\n').map((line, idx) => (
+                  {(message?.content || message?.text || '').split('\n').map((line, idx) => (
                     <p key={idx} className={idx > 0 ? 'mt-1' : ''}>
-                      {line.split('**').map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part)}
+                      {(line || '').split('**').map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part)}
                     </p>
                   ))}
 
