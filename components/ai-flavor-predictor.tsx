@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useCart } from '@/components/cart-provider'
-import { Check, ArrowRight, RotateCcw, Flame, Sparkles, Smile, Coffee, Battery, ShieldAlert } from 'lucide-react'
+import { Check, ArrowRight, RotateCcw, Flame, Sparkles, Smile, Coffee, Battery, ShieldAlert, Bot } from 'lucide-react'
 import gsap from 'gsap'
 
 export function AiFlavorPredictor() {

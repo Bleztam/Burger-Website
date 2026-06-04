@@ -8,7 +8,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
 
 export function PromoSpotlight() {
-  const sectionRef = useRef<HTMLSection>(null)
+  const sectionRef = useRef<HTMLElement>(null)
   const redBannerRef = useRef<HTMLDivElement>(null)
   const locationRef = useRef<HTMLDivElement>(null)
   const instagramRef = useRef<HTMLDivElement>(null)

@@ -17,17 +17,17 @@ export function AiConciergeChatbot() {
   const [processedToolCalls, setProcessedToolCalls] = useState<Set<string>>(new Set())
 
   // Initialize Vercel AI SDK Client hook
-  const { messages, append, status } = useChat({
-    api: '/api/chat',
-    maxSteps: 5, // allows tool-calls to execute and loop
-  })
+  const { messages, sendMessage, status } = useChat()
 
   const isLoading = status === 'submitted' || status === 'streaming'
 
-  const handleLocalSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()      // Stops standard HTML page reloads
+    e.stopPropagation()     // Prevents click/submit event from bubbling up to parent links
+
     if (!inputVal.trim() || isLoading) return
-    append({ role: 'user', content: inputVal })
+
+    sendMessage({ text: inputVal })
     setInputVal('')
   }
   // Scroll to bottom of chat automatically when messages arrive
@@ -38,22 +38,25 @@ export function AiConciergeChatbot() {
   // Watch messages for completed 'add_to_cart' tool calls
   useEffect(() => {
     messages.forEach((msg) => {
-      if (msg.toolInvocations) {
-        msg.toolInvocations.forEach((invocation) => {
-          const { toolName, toolCallId, state } = invocation
-          if (toolName === 'add_to_cart' && state === 'result') {
-            if (!processedToolCalls.has(toolCallId)) {
-              const result = (invocation as any).result
-              if (result && result.success) {
-                // Call global Cart Context addToCart method
-                addToCart(result.id, result.name, result.price, result.quantity)
-                
-                // Add to processed set
-                setProcessedToolCalls((prev) => {
-                  const updated = new Set(prev)
-                  updated.add(toolCallId)
-                  return updated
-                })
+      if (msg.parts) {
+        msg.parts.forEach((part) => {
+          if (part.type === 'tool-add_to_cart') {
+            const invocation = part as any
+            const { toolCallId, state } = invocation
+            if (state === 'result') {
+              if (!processedToolCalls.has(toolCallId)) {
+                const result = invocation.result
+                if (result && result.success) {
+                  // Call global Cart Context addToCart method
+                  addToCart(result.id, result.name, result.price, result.quantity)
+                  
+                  // Add to processed set
+                  setProcessedToolCalls((prev) => {
+                    const updated = new Set(prev)
+                    updated.add(toolCallId)
+                    return updated
+                  })
+                }
               }
             }
           }
@@ -149,18 +152,20 @@ export function AiConciergeChatbot() {
                       : 'bg-neutral-850 border border-neutral-800 text-neutral-250'
                   }`}
                 >
-                  {/* Clean Text display with basic markdown fallback */}
-                  {(message?.content || message?.text || '').split('\n').map((line, idx) => (
-                    <p key={idx} className={idx > 0 ? 'mt-1' : ''}>
-                      {(line || '').split('**').map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part)}
-                    </p>
-                  ))}
+                  {/* Render Message Parts */}
+                  {message.parts?.map((part, partIdx) => {
+                    if (part.type === 'text') {
+                      const textPart = part as any
+                      return (textPart.text || '').split('\n').map((line: string, idx: number) => (
+                        <p key={`${partIdx}-${idx}`} className={idx > 0 ? 'mt-1' : ''}>
+                          {(line || '').split('**').map((subPart, i) => i % 2 === 1 ? <strong key={i}>{subPart}</strong> : subPart)}
+                        </p>
+                      ))
+                    }
 
-                  {/* Render Tool Invocations inside chat */}
-                  {message.toolInvocations?.map((toolInvocation) => {
-                    const { toolName, toolCallId, state } = toolInvocation
-                    
-                    if (toolName === 'add_to_cart') {
+                    if (part.type === 'tool-add_to_cart') {
+                      const invocation = part as any
+                      const { toolCallId, state } = invocation
                       return (
                         <div key={toolCallId} className="mt-2 p-2 bg-neutral-900/60 border border-amber-500/30 rounded-lg flex items-center gap-2 text-[10px] text-amber-400">
                           <ShoppingCart size={12} />
@@ -172,6 +177,7 @@ export function AiConciergeChatbot() {
                         </div>
                       )
                     }
+
                     return null
                   })}
                 </div>
@@ -197,7 +203,7 @@ export function AiConciergeChatbot() {
         </div>
 
         {/* Input area */}
-        <form onSubmit={handleLocalSubmit} className="p-4 border-t border-neutral-800/80 bg-neutral-950 flex gap-2">
+        <form onSubmit={handleFormSubmit} className="p-4 border-t border-neutral-800/80 bg-neutral-950 flex gap-2">
           <input
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
@@ -206,7 +212,7 @@ export function AiConciergeChatbot() {
           />
           <button
             type="submit"
-            disabled={!inputVal.trim() || isLoading}
+            disabled={isLoading || !inputVal.trim()}
             className="w-10 h-10 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer"
           >
             <Send size={14} />

@@ -1,5 +1,5 @@
-import { streamText, tool } from 'ai'
-import { google } from '@ai-sdk/google'
+import { streamText, tool, convertToModelMessages } from 'ai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 
@@ -14,10 +14,20 @@ export async function POST(req: Request) {
     // Retrieve active API key - fallback to standard env if not present
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY
 
+    console.log("[Chat Route] Raw frontend messages received. Converting schema...")
+    const modelMessages = await convertToModelMessages(messages)
+    console.log(`[Chat Route] Successfully resolved ${modelMessages.length} CoreMessages. Checking environment configurations...`)
+
     if (!apiKey) {
+      console.log("[Chat Route] ⚠️ No API key detected. Running local fallback fallback router...")
       // Elegant, premium local fallback chatbot if keys are not configured yet
-      const lastMessage = messages[messages.length - 1]?.content || ''
-      const lowercaseMsg = lastMessage.toLowerCase()
+      const lastMessageContent = modelMessages[modelMessages.length - 1]?.content
+      const lastMessageText = typeof lastMessageContent === 'string' 
+        ? lastMessageContent 
+        : Array.isArray(lastMessageContent) 
+          ? lastMessageContent.map(part => part.type === 'text' ? part.text : '').join(' ')
+          : ''
+      const lowercaseMsg = lastMessageText.toLowerCase()
 
       let text = "Hey there! I am the Wolfsburger AI Concierge. It seems like the Gemini API Key is not set up in your environment yet, but I can still tell you about our menu! "
       
@@ -41,15 +51,19 @@ export async function POST(req: Request) {
       )
     }
 
+    console.log("[Chat Route] ✅ Gemini API Key validated. Connecting stream handler...")
+    const googleProvider = createGoogleGenerativeAI({ apiKey })
+
     // Initialize Vercel AI SDK with Google Gemini
+    console.log("[Chat Route] Successfully parsed messages. Invoking Gemini model...")
     const result = streamText({
-      model: google('gemini-1.5-flash'),
-      messages,
+      model: googleProvider('gemini-2.5-flash'),
+      messages: modelMessages,
       system: `You are the elite Full-Stack AI Concierge for "Wolfsburger" (Brand: Wolfscrew). 
 Your persona is high-energy, premium, slightly rebellious (street-burger culture), helpful, and direct.
 You have tools to fetch the live menu_items, branches locations, and add items directly to the user's cart.
 
-If a user asks for recommendations (e.g. "I have $15 and love spicy food, what should I get and where?"), follow these steps:
+If a user asks for recommendations (e.g. "I have $15 and love spicy food, what should I get and where?"), follow steps:
 1. Call get_menu_items to fetch the active burgers and drinks.
 2. Call get_branches to fetch our active locations.
 3. Cross-reference their preferences (budget, flavors) to find matching items.
@@ -61,7 +75,7 @@ Always keep answers concise, punchy, and formatted in clean Markdown.`,
       tools: {
         get_menu_items: tool({
           description: 'Retrieve the list of all active menu items including names, descriptions, prices, categories, and IDs.',
-          parameters: z.object({}),
+          inputSchema: z.object({}),
           execute: async () => {
             const { data, error } = await supabase
               .from('menu_items')
@@ -74,7 +88,7 @@ Always keep answers concise, punchy, and formatted in clean Markdown.`,
         }),
         get_branches: tool({
           description: 'Retrieve active branch locations including name, address, latitude, longitude, and hours.',
-          parameters: z.object({}),
+          inputSchema: z.object({}),
           execute: async () => {
             const { data, error } = await supabase
               .from('branches')
@@ -87,7 +101,7 @@ Always keep answers concise, punchy, and formatted in clean Markdown.`,
         }),
         add_to_cart: tool({
           description: 'Add a menu item directly to the customer\'s shopping cart.',
-          parameters: z.object({
+          inputSchema: z.object({
             menu_item_id: z.string().uuid().describe('The UUID of the menu item to add.'),
             quantity: z.number().int().positive().default(1).describe('The quantity of the menu item.'),
           }),
@@ -115,9 +129,18 @@ Always keep answers concise, punchy, and formatted in clean Markdown.`,
       },
     })
 
-    return result.toDataStreamResponse()
+    return result.toUIMessageStreamResponse()
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("❌ [Chat Backend Crash Details]:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      cause: error.cause
+    })
+    return new Response(JSON.stringify({ 
+      error: error.message, 
+      details: "Look directly at your next.js npm run dev terminal log for the exact backtrace." 
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })

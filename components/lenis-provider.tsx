@@ -20,7 +20,7 @@ export function LenisProvider({ children }: LenisProviderProps) {
         infinite: false,
       }}
     >
-      {children}
+      {children as any}
     </ReactLenis>
   )
 }
