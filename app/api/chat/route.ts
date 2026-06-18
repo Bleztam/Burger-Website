@@ -6,6 +6,132 @@ import { createClient } from '@/lib/supabase/server'
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30
 
+const fallbackMenuItems = [
+  {
+    id: 'c1b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Classic Smash',
+    description: 'Double 60g smash patties, American cheese, house sauce.',
+    price: 28,
+    category: 'burgers'
+  },
+  {
+    id: 'd2b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'The Monster Bacon',
+    description: '180g grilled artisan patty, crispy smoked bacon sheets, cheddar cream.',
+    price: 38,
+    category: 'burgers'
+  },
+  {
+    id: 'e3b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Truffle Wolf',
+    description: '180g beef patty, truffle mayo, caramelized onions, melted provolone.',
+    price: 42,
+    category: 'burgers'
+  },
+  {
+    id: 'f4b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Cheesy Jalapeño',
+    description: 'Double smash, pickled jalapeños, spicy pepper jack cheddar injection.',
+    price: 34,
+    category: 'burgers'
+  },
+  {
+    id: 'a5b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Veggie Street',
+    description: 'Plant-based crispy patty, shredded lettuce, fresh tomatoes, vegan garlic aioli.',
+    price: 32,
+    category: 'burgers'
+  },
+  {
+    id: 'b6b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Craft IPA',
+    description: 'Local artisanal craft IPA beer (served ice cold).',
+    price: 18,
+    category: 'drinks'
+  },
+  {
+    id: 'c7b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Classic Milkshake',
+    description: 'Creamy vanilla bean base mixed with dark chocolate swirls.',
+    price: 22,
+    category: 'drinks'
+  },
+  {
+    id: 'd8b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Wolf Soda',
+    description: 'House-infused craft soda with lime and guarana extract.',
+    price: 12,
+    category: 'drinks'
+  },
+  {
+    id: 'e9b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Passion Fruit Mocktail',
+    description: 'Fresh passion fruit juice, sparkling water, mint sprigs.',
+    price: 16,
+    category: 'drinks'
+  },
+  {
+    id: 'f0b9b8f2-8c1d-4f1a-8c1d-4f1a8c1d4f1a',
+    name: 'Americano Iced Coffee',
+    description: 'Double shot espresso poured over ice with a hint of caramel.',
+    price: 14,
+    category: 'drinks'
+  }
+]
+
+const fallbackBranches = [
+  {
+    id: 1,
+    name: 'São José dos Pinhais',
+    address: 'Rua XV de Novembro, 1234',
+    latitude: -25.5349,
+    longitude: -49.2008,
+    status: 'UNLOCKED',
+    step_order: 1,
+    hours: 'Tue-Sun: 6PM - 11PM'
+  },
+  {
+    id: 2,
+    name: 'Curitiba Centro',
+    address: 'Av. Marechal Deodoro, 567',
+    latitude: -25.4284,
+    longitude: -49.2733,
+    status: 'UNLOCKED',
+    step_order: 2,
+    hours: 'Mon-Sun: 5PM - 12AM'
+  },
+  {
+    id: 3,
+    name: 'Batel',
+    address: 'Rua Bispo Dom José, 890',
+    latitude: -25.4431,
+    longitude: -49.2922,
+    status: 'UNLOCKED',
+    step_order: 3,
+    hours: 'Wed-Sun: 6PM - 11PM'
+  },
+  {
+    id: 4,
+    name: 'Água Verde',
+    address: 'Coming Soon',
+    latitude: -25.4518,
+    longitude: -49.2854,
+    status: 'LOCKED',
+    step_order: 4,
+    hours: 'Opening Q2 2026'
+  },
+  {
+    id: 5,
+    name: 'Santa Felicidade',
+    address: 'Coming Soon',
+    latitude: -25.4055,
+    longitude: -49.3308,
+    status: 'LOCKED',
+    step_order: 5,
+    hours: 'Opening Q4 2026'
+  }
+]
+
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json()
@@ -63,66 +189,111 @@ export async function POST(req: Request) {
 Your persona is high-energy, premium, slightly rebellious (street-burger culture), helpful, and direct.
 You have tools to fetch the live menu_items, branches locations, and add items directly to the user's cart.
 
-If a user asks for recommendations (e.g. "I have $15 and love spicy food, what should I get and where?"), follow steps:
-1. Call get_menu_items to fetch the active burgers and drinks.
-2. Call get_branches to fetch our active locations.
-3. Cross-reference their preferences (budget, flavors) to find matching items.
-4. Tell them what branch is nearest if they share location coordinates (you can ask for their location, or compute distance if they give latitude/longitude). Note: R$ 1 is roughly equivalent to standard USD value for their budget query (e.g. treat $15 as R$ 75, or explain the conversion, or suggest items under R$ 50/R$ 15).
-5. Suggest the perfect combo and explain why.
-6. Trigger the add_to_cart tool for the recommended item.
+Whenever the user asks about the menu, specific burgers or drinks, prices, or asks for a recommendation:
+1. You MUST call the get_menu_items tool to fetch the live menu items added by the admin from the database. Do NOT use any pre-trained or fallback items if the tool can retrieve them.
+2. Provide descriptions and prices of the relevant items from the menu.
+3. Always suggest a custom combo (consisting of exactly one burger and one drink from the live menu) with a brief, high-energy description explaining why they pair perfectly.
+4. Trigger the add_to_cart tool for the recommended burger or combo item if they show interest.
+
+If they ask about locations:
+1. Call get_branches to retrieve our active locations.
+2. Tell them what branch is nearest (especially if they share their location).
 
 Always keep answers concise, punchy, and formatted in clean Markdown.`,
+      maxSteps: 5,
       tools: {
         get_menu_items: tool({
           description: 'Retrieve the list of all active menu items including names, descriptions, prices, categories, and IDs.',
           inputSchema: z.object({}),
           execute: async () => {
-            const { data, error } = await supabase
-              .from('menu_items')
-              .select('id, name, description, price, category')
-              .eq('is_active', true)
-            
-            if (error || !data) return { error: 'Failed to retrieve menu items.' }
-            return { menu_items: data }
+            try {
+              const { data, error } = await supabase
+                .from('menu_items')
+                .select('id, name, description, price, category')
+                .eq('is_active', true)
+              
+              if (error || !data || data.length === 0) {
+                console.log("[Chat Route] Supabase fetch failed or empty, falling back to static menu items.")
+                return { menu_items: fallbackMenuItems }
+              }
+              return { menu_items: data }
+            } catch (err) {
+              console.log("[Chat Route] Exception fetching from Supabase, falling back to static menu items.", err)
+              return { menu_items: fallbackMenuItems }
+            }
           },
         }),
         get_branches: tool({
           description: 'Retrieve active branch locations including name, address, latitude, longitude, and hours.',
           inputSchema: z.object({}),
           execute: async () => {
-            const { data, error } = await supabase
-              .from('branches')
-              .select('id, name, address, latitude, longitude, hours')
-              .eq('status', 'UNLOCKED')
-            
-            if (error || !data) return { error: 'Failed to retrieve branch locations.' }
-            return { branches: data }
+            try {
+              const { data, error } = await supabase
+                .from('branches')
+                .select('id, name, address, latitude, longitude, hours')
+                .eq('status', 'UNLOCKED')
+              
+              if (error || !data || data.length === 0) {
+                console.log("[Chat Route] Supabase fetch failed or empty, falling back to static branches.")
+                return { branches: fallbackBranches.filter(b => b.status === 'UNLOCKED') }
+              }
+              return { branches: data }
+            } catch (err) {
+              console.log("[Chat Route] Exception fetching from Supabase, falling back to static branches.", err)
+              return { branches: fallbackBranches.filter(b => b.status === 'UNLOCKED') }
+            }
           },
         }),
         add_to_cart: tool({
           description: 'Add a menu item directly to the customer\'s shopping cart.',
           inputSchema: z.object({
-            menu_item_id: z.string().uuid().describe('The UUID of the menu item to add.'),
+            menu_item_id: z.string().describe('The UUID of the menu item to add.'),
             quantity: z.number().int().positive().default(1).describe('The quantity of the menu item.'),
           }),
           execute: async ({ menu_item_id, quantity }) => {
-            const { data, error } = await supabase
-              .from('menu_items')
-              .select('id, name, price')
-              .eq('id', menu_item_id)
-              .single()
+            try {
+              const { data, error } = await supabase
+                .from('menu_items')
+                .select('id, name, price')
+                .eq('id', menu_item_id)
+                .single()
 
-            if (error || !data) {
-              return { error: `Menu item with id ${menu_item_id} not found.` }
-            }
+              if (error || !data) {
+                const fallbackItem = fallbackMenuItems.find(item => item.id === menu_item_id)
+                if (fallbackItem) {
+                  return {
+                    success: true,
+                    id: fallbackItem.id,
+                    name: fallbackItem.name,
+                    price: Number(fallbackItem.price),
+                    quantity,
+                    message: `Successfully added ${quantity}x ${fallbackItem.name} to cart.`
+                  }
+                }
+                return { error: `Menu item with id ${menu_item_id} not found.` }
+              }
 
-            return {
-              success: true,
-              id: data.id,
-              name: data.name,
-              price: Number(data.price),
-              quantity,
-              message: `Successfully added ${quantity}x ${data.name} to cart.`
+              return {
+                success: true,
+                id: data.id,
+                name: data.name,
+                price: Number(data.price),
+                quantity,
+                message: `Successfully added ${quantity}x ${data.name} to cart.`
+              }
+            } catch (err) {
+              const fallbackItem = fallbackMenuItems.find(item => item.id === menu_item_id)
+              if (fallbackItem) {
+                return {
+                  success: true,
+                  id: fallbackItem.id,
+                  name: fallbackItem.name,
+                  price: Number(fallbackItem.price),
+                  quantity,
+                  message: `Successfully added ${quantity}x ${fallbackItem.name} to cart.`
+                }
+              }
+              return { error: `Menu item with id ${menu_item_id} not found (db offline).` }
             }
           },
         }),

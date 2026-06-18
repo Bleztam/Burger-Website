@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import { google } from '@ai-sdk/google'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
@@ -83,8 +83,9 @@ Return the response in structured JSON with these keys:
   "explanation": "string"
 }`
 
+    const googleProvider = createGoogleGenerativeAI({ apiKey })
     const { text } = await generateText({
-      model: google('gemini-1.5-flash'),
+      model: googleProvider('gemini-2.5-flash'),
       prompt,
       system: 'You are a culinary AI matcher that returns pure, valid JSON objects containing matching burger and drink recommendations.',
     })
