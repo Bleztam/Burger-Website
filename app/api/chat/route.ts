@@ -158,11 +158,11 @@ export async function POST(req: Request) {
       let text = "Hey there! I am the Wolfsburger AI Concierge. It seems like the Gemini API Key is not set up in your environment yet, but I can still tell you about our menu! "
       
       if (lowercaseMsg.includes('spicy') || lowercaseMsg.includes('hot')) {
-        text += "If you like it hot, you should definitely try the **Cheesy Jalapeño** (R$ 34)! It has double smash patties, pickled jalapeños, and a melted pepper jack injection. You can get it at our Curitiba Centro branch!"
+        text += "If you like it hot, you should definitely try the **Cheesy Jalapeño** (ETB 34)! It has double smash patties, pickled jalapeños, and a melted pepper jack injection. You can get it at our Curitiba Centro branch!"
       } else if (lowercaseMsg.includes('bacon') || lowercaseMsg.includes('monster')) {
-        text += "Our crowd favorite is the **Monster Bacon** (R$ 38), which features a huge 180g flame-grilled patty, crispy smoked bacon sheets, and warm cheddar cream!"
+        text += "Our crowd favorite is the **Monster Bacon** (ETB 38), which features a huge 180g flame-grilled patty, crispy smoked bacon sheets, and warm cheddar cream!"
       } else {
-        text += "We specialize in smashed street-style burgers like the **Classic Smash** (R$ 28) and premium grilled patties like the **Truffle Wolf** (R$ 42). What are you in the mood for?"
+        text += "We specialize in smashed street-style burgers like the **Classic Smash** (ETB 28) and premium grilled patties like the **Truffle Wolf** (ETB 42). What are you in the mood for?"
       }
 
       // Simulate stream response format for Vercel AI SDK hook compatibility
@@ -188,6 +188,8 @@ export async function POST(req: Request) {
       system: `You are the elite Full-Stack AI Concierge for "Wolfsburger" (Brand: Wolfscrew). 
 Your persona is high-energy, premium, slightly rebellious (street-burger culture), helpful, and direct.
 You have tools to fetch the live menu_items, branches locations, and add items directly to the user's cart.
+
+All prices are in ETB (Ethiopian Birr). Format all prices using the 'ETB' currency symbol (e.g. 'ETB 150').
 
 Whenever the user asks about the menu, specific burgers or drinks, prices, or asks for a recommendation:
 1. You MUST call the get_menu_items tool to fetch the live menu items added by the admin from the database. Do NOT use any pre-trained or fallback items if the tool can retrieve them.

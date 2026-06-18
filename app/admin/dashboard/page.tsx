@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, ToggleLeft, ToggleRight, Loader2, DollarSign, MapPin, ClipboardList, Utensils, Image, RefreshCw } from 'lucide-react'
+import { Plus, Trash2, ToggleLeft, ToggleRight, Loader2, DollarSign, MapPin, ClipboardList, Utensils, Image, RefreshCw, Edit, X } from 'lucide-react'
 
 // TS Types
 interface MenuItem {
@@ -10,7 +10,7 @@ interface MenuItem {
   name: string
   description: string
   price: number
-  category: 'burgers' | 'drinks'
+  category: string
   image_url: string
   is_active: boolean
 }
@@ -65,9 +65,20 @@ export default function AdminDashboard() {
   // Forms state
   const [newMenu, setNewMenu] = useState({ name: '', description: '', price: '', category: 'burgers', imageFile: null as File | null })
   const [menuUploading, setMenuUploading] = useState(false)
+  const [isCustomCategory, setIsCustomCategory] = useState(false)
+  const [customCategory, setCustomCategory] = useState('')
   
   const [newBranch, setNewBranch] = useState({ name: '', address: '', latitude: '', longitude: '', step_order: '', hours: 'Mon-Sun: 5PM - 12AM' })
   const [branchSubmitting, setBranchSubmitting] = useState(false)
+
+  // Edit Modals State
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
+  const [editItemForm, setEditItemForm] = useState({ name: '', description: '', price: '', category: '', image_url: '', is_active: true })
+  const [isEditItemCustomCategory, setIsEditItemCustomCategory] = useState(false)
+  const [editItemCustomCategory, setEditItemCustomCategory] = useState('')
+
+  const [editingBranch, setEditingBranch] = useState<Branch | null>(null)
+  const [editBranchForm, setEditBranchForm] = useState({ name: '', address: '', latitude: '', longitude: '', step_order: '', hours: '' })
 
   // =========================================================================
   // 1. ORDERS DASHBOARD (Kanban + Realtime sync)
@@ -181,19 +192,23 @@ export default function AdminDashboard() {
         imageUrl = data.publicUrl
       }
 
+      const categoryToInsert = isCustomCategory ? customCategory.trim().toLowerCase() : newMenu.category
+
       const { error } = await supabase
         .from('menu_items')
         .insert({
           name: newMenu.name,
           description: newMenu.description,
           price: parseFloat(newMenu.price),
-          category: newMenu.category,
+          category: categoryToInsert,
           image_url: imageUrl || 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=300',
           is_active: true,
         })
-
+ 
       if (!error) {
         setNewMenu({ name: '', description: '', price: '', category: 'burgers', imageFile: null })
+        setIsCustomCategory(false)
+        setCustomCategory('')
         fetchMenu()
       }
     } catch (err: any) {
@@ -282,6 +297,105 @@ export default function AdminDashboard() {
       setBranches((prev) =>
         prev.map((branch) => (branch.id === id ? { ...branch, status: nextStatus } : branch))
       )
+    }
+  }
+
+  const handleEditItemClick = (item: MenuItem) => {
+    setEditingItem(item)
+    setEditItemForm({
+      name: item.name,
+      description: item.description,
+      price: item.price.toString(),
+      category: item.category,
+      image_url: item.image_url,
+      is_active: item.is_active
+    })
+    setIsEditItemCustomCategory(false)
+    setEditItemCustomCategory('')
+  }
+
+  const handleEditItemSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingItem) return
+
+    const categoryToUpdate = isEditItemCustomCategory ? editItemCustomCategory.trim().toLowerCase() : editItemForm.category
+    const { error } = await supabase
+      .from('menu_items')
+      .update({
+        name: editItemForm.name,
+        description: editItemForm.description,
+        price: parseFloat(editItemForm.price),
+        category: categoryToUpdate,
+        image_url: editItemForm.image_url,
+        is_active: editItemForm.is_active
+      })
+      .eq('id', editingItem.id)
+
+    if (!error) {
+      setMenuItems((prev) =>
+        prev.map((item) =>
+          item.id === editingItem.id
+            ? {
+                ...item,
+                name: editItemForm.name,
+                description: editItemForm.description,
+                price: parseFloat(editItemForm.price),
+                category: categoryToUpdate,
+                image_url: editItemForm.image_url,
+                is_active: editItemForm.is_active
+              }
+            : item
+        )
+      )
+      setEditingItem(null)
+    }
+  }
+
+  const handleEditBranchClick = (branch: Branch) => {
+    setEditingBranch(branch)
+    setEditBranchForm({
+      name: branch.name,
+      address: branch.address,
+      latitude: branch.latitude.toString(),
+      longitude: branch.longitude.toString(),
+      step_order: branch.step_order.toString(),
+      hours: branch.hours
+    })
+  }
+
+  const handleEditBranchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingBranch) return
+
+    const { error } = await supabase
+      .from('branches')
+      .update({
+        name: editBranchForm.name,
+        address: editBranchForm.address,
+        latitude: parseFloat(editBranchForm.latitude),
+        longitude: parseFloat(editBranchForm.longitude),
+        step_order: parseInt(editBranchForm.step_order),
+        hours: editBranchForm.hours
+      })
+      .eq('id', editingBranch.id)
+
+    if (!error) {
+      setBranches((prev) =>
+        prev.map((b) =>
+          b.id === editingBranch.id
+            ? {
+                ...b,
+                name: editBranchForm.name,
+                address: editBranchForm.address,
+                latitude: parseFloat(editBranchForm.latitude),
+                longitude: parseFloat(editBranchForm.longitude),
+                step_order: parseInt(editBranchForm.step_order),
+                hours: editBranchForm.hours
+              }
+            : b
+        )
+      )
+      setEditingBranch(null)
     }
   }
 
@@ -383,7 +497,7 @@ export default function AdminDashboard() {
 
                             <div className="flex items-center justify-between pt-2 border-t border-neutral-900">
                               <span className="text-[10px] font-bold text-amber-500">
-                                R$ {Number(order.total_amount).toFixed(2)}
+                                ETB {Number(order.total_amount).toFixed(2)}
                               </span>
                               {colStatus !== 'DELIVERED' && (
                                 <button
@@ -435,7 +549,7 @@ export default function AdminDashboard() {
 
                 <div>
                   <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
-                    Price (R$)
+                    Price (ETB)
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs">
@@ -458,14 +572,41 @@ export default function AdminDashboard() {
                     Category Type
                   </label>
                   <select
-                    value={newMenu.category}
-                    onChange={(e) => setNewMenu({ ...newMenu, category: e.target.value })}
+                    value={isCustomCategory ? '_custom' : newMenu.category}
+                    onChange={(e) => {
+                      if (e.target.value === '_custom') {
+                        setIsCustomCategory(true)
+                      } else {
+                        setIsCustomCategory(false)
+                        setNewMenu({ ...newMenu, category: e.target.value })
+                      }
+                    }}
                     className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
                   >
-                    <option value="burgers">Burgers</option>
-                    <option value="drinks">Drinks</option>
+                    {Array.from(new Set(['burgers', 'drinks', ...menuItems.map(item => item.category.toLowerCase())])).map(cat => (
+                      <option key={cat} value={cat}>
+                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      </option>
+                    ))}
+                    <option value="_custom">+ Create Custom Category...</option>
                   </select>
                 </div>
+
+                {isCustomCategory && (
+                  <div>
+                    <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                      Custom Category Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={customCategory}
+                      onChange={(e) => setCustomCategory(e.target.value)}
+                      placeholder="E.g. Desserts"
+                      className="w-full bg-neutral-950 border border-neutral-850 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                    />
+                  </div>
+                )}
 
                 <div>
                   <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
@@ -525,7 +666,7 @@ export default function AdminDashboard() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start gap-1">
                         <h4 className="text-sm font-bold text-neutral-200 truncate">{item.name}</h4>
-                        <span className="text-xs font-bold text-amber-500 shrink-0">R$ {Number(item.price).toFixed(2)}</span>
+                        <span className="text-xs font-bold text-amber-500 shrink-0">ETB {Number(item.price).toFixed(2)}</span>
                       </div>
                       <p className="text-[10px] text-neutral-400 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>
                       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-neutral-850">
@@ -540,12 +681,21 @@ export default function AdminDashboard() {
                           )}
                         </button>
 
-                        <button
-                          onClick={() => deleteMenuItem(item.id)}
-                          className="p-1 rounded bg-red-600/10 hover:bg-red-600/20 text-red-500 transition-colors border border-red-500/15 cursor-pointer"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleEditItemClick(item)}
+                            className="p-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 transition-colors border border-amber-500/15 cursor-pointer"
+                          >
+                            <Edit size={12} />
+                          </button>
+                          
+                          <button
+                            onClick={() => deleteMenuItem(item.id)}
+                            className="p-1 rounded bg-red-600/10 hover:bg-red-600/20 text-red-500 transition-colors border border-red-500/15 cursor-pointer"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -696,20 +846,288 @@ export default function AdminDashboard() {
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => toggleBranchStatus(branch.id, branch.status)}
-                      className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider font-bold text-neutral-400 hover:text-white cursor-pointer"
-                    >
-                      {branch.status === 'UNLOCKED' ? (
-                        <><ToggleRight className="text-green-500" size={20} /> Active</>
-                      ) : (
-                        <><ToggleLeft className="text-neutral-600" size={20} /> Locked / Soon</>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => toggleBranchStatus(branch.id, branch.status)}
+                        className="flex items-center gap-1.5 text-[9px] uppercase tracking-wider font-bold text-neutral-400 hover:text-white cursor-pointer"
+                      >
+                        {branch.status === 'UNLOCKED' ? (
+                          <><ToggleRight className="text-green-500" size={20} /> Active</>
+                        ) : (
+                          <><ToggleLeft className="text-neutral-600" size={20} /> Locked / Soon</>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleEditBranchClick(branch)}
+                        className="p-1.5 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 transition-colors border border-amber-500/15 cursor-pointer"
+                      >
+                        <Edit size={14} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Menu Item Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+            <button
+              onClick={() => setEditingItem(null)}
+              className="absolute right-4 top-4 text-neutral-400 hover:text-white cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <h3 className="font-display text-xl uppercase tracking-wider text-neutral-200 mb-6 flex items-center gap-2">
+              <Edit size={18} className="text-amber-500" /> Edit Menu Item
+            </h3>
+            
+            <form onSubmit={handleEditItemSubmit} className="space-y-4">
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Item Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editItemForm.name}
+                  onChange={(e) => setEditItemForm({ ...editItemForm, name: e.target.value })}
+                  placeholder="E.g. Bacon Cheddar Melt"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Price (ETB)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs">
+                    <DollarSign size={12} />
+                  </span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={editItemForm.price}
+                    onChange={(e) => setEditItemForm({ ...editItemForm, price: e.target.value })}
+                    placeholder="38.00"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-8 pr-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Category Type
+                </label>
+                <select
+                  value={isEditItemCustomCategory ? '_custom' : editItemForm.category}
+                  onChange={(e) => {
+                    if (e.target.value === '_custom') {
+                      setIsEditItemCustomCategory(true)
+                    } else {
+                      setIsEditItemCustomCategory(false)
+                      setEditItemForm({ ...editItemForm, category: e.target.value })
+                    }
+                  }}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                >
+                  {Array.from(new Set(['burgers', 'drinks', ...menuItems.map(item => item.category.toLowerCase())])).map(cat => (
+                    <option key={cat} value={cat}>
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </option>
+                  ))}
+                  <option value="_custom">+ Create Custom Category...</option>
+                </select>
+              </div>
+
+              {isEditItemCustomCategory && (
+                <div>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                    Custom Category Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editItemCustomCategory}
+                    onChange={(e) => setEditItemCustomCategory(e.target.value)}
+                    placeholder="E.g. Desserts"
+                    className="w-full bg-neutral-950 border border-neutral-850 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Item Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={editItemForm.description}
+                  onChange={(e) => setEditItemForm({ ...editItemForm, description: e.target.value })}
+                  placeholder="Brief description of patties, toppings, bun, or drink mix."
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Image URL
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editItemForm.image_url}
+                  onChange={(e) => setEditItemForm({ ...editItemForm, image_url: e.target.value })}
+                  placeholder="Image URL"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-neutral-800 text-neutral-400 hover:text-white font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold uppercase tracking-wider text-xs shadow-lg transition-transform duration-300 active:scale-95 cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Branch Modal */}
+      {editingBranch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+            <button
+              onClick={() => setEditingBranch(null)}
+              className="absolute right-4 top-4 text-neutral-400 hover:text-white cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <h3 className="font-display text-xl uppercase tracking-wider text-neutral-200 mb-6 flex items-center gap-2">
+              <Edit size={18} className="text-amber-500" /> Edit Branch Node
+            </h3>
+            
+            <form onSubmit={handleEditBranchSubmit} className="space-y-4">
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Branch Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editBranchForm.name}
+                  onChange={(e) => setEditBranchForm({ ...editBranchForm, name: e.target.value })}
+                  placeholder="E.g. Batel"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Node Step Order (Int)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={editBranchForm.step_order}
+                  onChange={(e) => setEditBranchForm({ ...editBranchForm, step_order: e.target.value })}
+                  placeholder="Timeline position (e.g. 6)"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Street Address
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editBranchForm.address}
+                  onChange={(e) => setEditBranchForm({ ...editBranchForm, address: e.target.value })}
+                  placeholder="Rua Bispo Dom José, 890"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                    Latitude (Float)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    required
+                    value={editBranchForm.latitude}
+                    onChange={(e) => setEditBranchForm({ ...editBranchForm, latitude: e.target.value })}
+                    placeholder="-25.4431"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                    Longitude (Float)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    required
+                    value={editBranchForm.longitude}
+                    onChange={(e) => setEditBranchForm({ ...editBranchForm, longitude: e.target.value })}
+                    placeholder="-49.2922"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 block mb-1">
+                  Operating Hours Text
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editBranchForm.hours}
+                  onChange={(e) => setEditBranchForm({ ...editBranchForm, hours: e.target.value })}
+                  placeholder="Mon-Sun: 5PM - 12AM"
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2 text-xs text-neutral-200 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingBranch(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-neutral-800 text-neutral-400 hover:text-white font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold uppercase tracking-wider text-xs shadow-lg transition-transform duration-300 active:scale-95 cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -207,7 +207,7 @@ export function AiConciergeChatbot() {
           <input
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
-            placeholder="I have R$ 40 and love spicy food..."
+            placeholder="I have ETB 150 and love spicy food..."
             className="flex-1 bg-neutral-900 border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-amber-500 transition-colors"
           />
           <button

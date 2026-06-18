@@ -323,14 +323,14 @@ export function AiFlavorPredictor() {
                 <span className="text-[9px] uppercase tracking-wider font-bold text-amber-500">Burger Match</span>
                 <h4 className="font-display text-base uppercase text-neutral-100 mt-1 truncate">{recommendation.burger.name}</h4>
                 <p className="text-[9px] text-neutral-400 mt-0.5 line-clamp-2 leading-normal">{recommendation.burger.description}</p>
-                <span className="text-xs font-bold text-neutral-200 mt-2 block">R$ {recommendation.burger.price}</span>
+                <span className="text-xs font-bold text-neutral-200 mt-2 block">ETB {recommendation.burger.price}</span>
               </div>
               
               <div className="bg-neutral-950 border border-neutral-850 p-3.5 rounded-xl">
                 <span className="text-[9px] uppercase tracking-wider font-bold text-amber-500">Drink Match</span>
                 <h4 className="font-display text-base uppercase text-neutral-100 mt-1 truncate">{recommendation.drink.name}</h4>
                 <p className="text-[9px] text-neutral-400 mt-0.5 line-clamp-2 leading-normal">{recommendation.drink.description}</p>
-                <span className="text-xs font-bold text-neutral-200 mt-2 block">R$ {recommendation.drink.price}</span>
+                <span className="text-xs font-bold text-neutral-200 mt-2 block">ETB {recommendation.drink.price}</span>
               </div>
             </div>
 
@@ -340,7 +340,7 @@ export function AiFlavorPredictor() {
                 onClick={handleAddCombo}
                 className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold uppercase tracking-wider text-xs shadow-lg transition-transform duration-300 active:scale-95 cursor-pointer"
               >
-                Add Entire Combo to Cart (R$ {Number(recommendation.burger.price) + Number(recommendation.drink.price)})
+                Add Entire Combo to Cart (ETB {Number(recommendation.burger.price) + Number(recommendation.drink.price)})
               </button>
               
               <button

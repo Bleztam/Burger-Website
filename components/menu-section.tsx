@@ -1,74 +1,138 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { createClient } from '@/lib/supabase/client'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const burgers = [
+interface DBMenuItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  category: string
+  image_url?: string
+  is_active: boolean
+}
+
+const fallbackMenuItems: DBMenuItem[] = [
   {
+    id: 'f1',
     name: 'Classic Smash',
     description: 'Double 60g smash patties, American cheese, house sauce.',
-    price: 'R$ 28',
+    price: 28,
+    category: 'burgers',
+    is_active: true
   },
   {
+    id: 'f2',
     name: 'The Monster Bacon',
     description: '180g grilled artisan patty, crispy smoked bacon sheets, cheddar cream.',
-    price: 'R$ 38',
+    price: 38,
+    category: 'burgers',
+    is_active: true
   },
   {
+    id: 'f3',
     name: 'Truffle Wolf',
     description: '180g beef patty, truffle mayo, caramelized onions, melted provolone.',
-    price: 'R$ 42',
+    price: 42,
+    category: 'burgers',
+    is_active: true
   },
   {
+    id: 'f4',
     name: 'Cheesy Jalapeño',
     description: 'Double smash, pickled jalapeños, spicy pepper jack cheddar injection.',
-    price: 'R$ 34',
+    price: 34,
+    category: 'burgers',
+    is_active: true
   },
   {
+    id: 'f5',
     name: 'Veggie Street',
     description: 'Plant-based crispy patty, shredded lettuce, fresh tomatoes, vegan garlic aioli.',
-    price: 'R$ 32',
+    price: 32,
+    category: 'burgers',
+    is_active: true
   },
-]
-
-const drinks = [
   {
+    id: 'f6',
     name: 'Craft IPA',
     description: 'Local artisanal craft IPA beer (served ice cold).',
-    price: 'R$ 18',
+    price: 18,
+    category: 'drinks',
+    is_active: true
   },
   {
+    id: 'f7',
     name: 'Classic Milkshake',
     description: 'Creamy vanilla bean base mixed with dark chocolate swirls.',
-    price: 'R$ 22',
+    price: 22,
+    category: 'drinks',
+    is_active: true
   },
   {
+    id: 'f8',
     name: 'Wolf Soda',
     description: 'House-infused craft soda with lime and guarana extract.',
-    price: 'R$ 12',
+    price: 12,
+    category: 'drinks',
+    is_active: true
   },
   {
+    id: 'f9',
     name: 'Passion Fruit Mocktail',
     description: 'Fresh passion fruit juice, sparkling water, mint sprigs.',
-    price: 'R$ 16',
+    price: 16,
+    category: 'drinks',
+    is_active: true
   },
   {
+    id: 'f10',
     name: 'Americano Iced Coffee',
     description: 'Double shot espresso poured over ice with a hint of caramel.',
-    price: 'R$ 14',
-  },
+    price: 14,
+    category: 'drinks',
+    is_active: true
+  }
 ]
 
 export function MenuSection() {
+  const [menuItems, setMenuItems] = useState<DBMenuItem[]>([])
+  const [loading, setLoading] = useState(true)
+
   const sectionRef = useRef<HTMLElement>(null)
   const graffitiRef = useRef<HTMLDivElement>(null)
-  const burgerItemsRef = useRef<HTMLDivElement>(null)
-  const drinkItemsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const supabase = createClient()
+    async function loadMenu() {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('*')
+          .eq('is_active', true)
+        
+        if (!error && data && data.length > 0) {
+          setMenuItems(data)
+        } else {
+          setMenuItems(fallbackMenuItems)
+        }
+      } catch (err) {
+        setMenuItems(fallbackMenuItems)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadMenu()
+  }, [])
+
+  useEffect(() => {
+    if (loading) return
+
     const ctx = gsap.context(() => {
       const mm = gsap.matchMedia()
 
@@ -88,92 +152,78 @@ export function MenuSection() {
           })
         }
 
-        // Burger items slide in from left
-        if (burgerItemsRef.current) {
-          const burgerItems = burgerItemsRef.current.querySelectorAll('.menu-item')
-          gsap.fromTo(
-            burgerItems,
-            { x: -50, opacity: 0 },
-            {
-              x: 0,
-              opacity: 1,
-              duration: 0.6,
-              stagger: 0.08,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: sectionRef.current,
-                start: 'top 60%',
-              },
-            }
-          )
-        }
-
-        // Drink items slide in from right
-        if (drinkItemsRef.current) {
-          const drinkItems = drinkItemsRef.current.querySelectorAll('.menu-item')
-          gsap.fromTo(
-            drinkItems,
-            { x: 50, opacity: 0 },
-            {
-              x: 0,
-              opacity: 1,
-              duration: 0.6,
-              stagger: 0.08,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: sectionRef.current,
-                start: 'top 60%',
-              },
-            }
-          )
+        // Columns slide in - alternate left and right based on column index
+        if (sectionRef.current) {
+          const columns = sectionRef.current.querySelectorAll('.category-column')
+          columns.forEach((col, colIdx) => {
+            const items = col.querySelectorAll('.menu-item')
+            const direction = colIdx % 2 === 0 ? -50 : 50
+            gsap.fromTo(
+              items,
+              { x: direction, opacity: 0 },
+              {
+                x: 0,
+                opacity: 1,
+                duration: 0.6,
+                stagger: 0.08,
+                ease: 'power3.out',
+                scrollTrigger: {
+                  trigger: sectionRef.current,
+                  start: 'top 60%',
+                },
+              }
+            )
+          })
         }
       })
 
       // Mobile animations - simpler fade-in only
       mm.add('(max-width: 767px)', () => {
-        // Simple fade for all items
-        if (burgerItemsRef.current) {
-          const burgerItems = burgerItemsRef.current.querySelectorAll('.menu-item')
-          gsap.fromTo(
-            burgerItems,
-            { opacity: 0, y: 20 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.4,
-              stagger: 0.05,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: sectionRef.current,
-                start: 'top 70%',
-              },
-            }
-          )
-        }
-
-        if (drinkItemsRef.current) {
-          const drinkItems = drinkItemsRef.current.querySelectorAll('.menu-item')
-          gsap.fromTo(
-            drinkItems,
-            { opacity: 0, y: 20 },
-            {
-              opacity: 1,
-              y: 0,
-              duration: 0.4,
-              stagger: 0.05,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: drinkItemsRef.current,
-                start: 'top 80%',
-              },
-            }
-          )
+        if (sectionRef.current) {
+          const columns = sectionRef.current.querySelectorAll('.category-column')
+          columns.forEach((col) => {
+            const items = col.querySelectorAll('.menu-item')
+            gsap.fromTo(
+              items,
+              { opacity: 0, y: 20 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 0.4,
+                stagger: 0.05,
+                ease: 'power2.out',
+                scrollTrigger: {
+                  trigger: col,
+                  start: 'top 80%',
+                },
+              }
+            )
+          })
         }
       })
     }, sectionRef)
 
     return () => ctx.revert()
-  }, [])
+  }, [loading])
+
+  // Group menu items dynamically
+  const categoriesMap: Record<string, DBMenuItem[]> = {}
+  menuItems.forEach((item) => {
+    const cat = item.category.toLowerCase()
+    if (!categoriesMap[cat]) {
+      categoriesMap[cat] = []
+    }
+    categoriesMap[cat].push(item)
+  })
+
+  // Sort categories: burgers first, drinks second, then rest alphabetically
+  const sortedCategories = Object.keys(categoriesMap).sort((a, b) => {
+    if (a === 'burgers') return -1
+    if (b === 'burgers') return 1
+    if (a === 'drinks') return -1
+    if (b === 'drinks') return 1
+    return a.localeCompare(b)
+  })
 
   return (
     <section
@@ -245,68 +295,48 @@ export function MenuSection() {
           </h2>
         </div>
 
-        {/* Two Column Grid - stacks on mobile */}
-        <div className="grid grid-cols-1 gap-8 sm:gap-10 md:grid-cols-2 md:gap-12 lg:gap-16 xl:gap-24">
-          {/* Burgers Column */}
-          <div>
-            <h3 className="mb-4 flex items-center gap-2 font-display text-xl font-black text-neutral-900 sm:mb-6 sm:gap-3 sm:text-2xl md:mb-8 md:gap-4 md:text-3xl lg:text-4xl">
-              <span className="h-0.5 w-4 bg-neutral-900 sm:w-6 md:w-8" />
-              BURGERS
-            </h3>
-            <div ref={burgerItemsRef} className="space-y-3 sm:space-y-4 md:space-y-6">
-              {burgers.map((item, index) => (
-                <div
-                  key={index}
-                  className="menu-item group cursor-pointer"
-                >
-                  <div className="flex flex-col gap-2 border-b-2 border-neutral-900/20 pb-3 transition-colors duration-300 group-hover:border-neutral-900 sm:gap-3 sm:pb-4 md:flex-row md:items-start md:justify-between md:gap-4">
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-display text-base font-bold text-neutral-900 transition-all duration-300 group-hover:tracking-wider sm:text-lg md:text-xl lg:text-2xl">
-                        {item.name}
-                      </h4>
-                      <p className="mt-0.5 text-xs leading-relaxed text-neutral-800/70 sm:mt-1 sm:text-sm md:text-base">
-                        {item.description}
-                      </p>
-                    </div>
-                    <span className="shrink-0 whitespace-nowrap font-display text-sm font-bold text-neutral-900 sm:text-base md:text-lg lg:text-xl">
-                      {item.price}
-                    </span>
+        {/* Dynamic Columns - stacks on mobile */}
+        {loading ? (
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-900 border-t-transparent" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-8 sm:gap-10 md:grid-cols-2 md:gap-12 lg:gap-16 xl:gap-24">
+            {sortedCategories.map((categoryName, colIdx) => {
+              const items = categoriesMap[categoryName]
+              return (
+                <div key={categoryName} className="category-column">
+                  <h3 className="mb-4 flex items-center gap-2 font-display text-xl font-black text-neutral-900 sm:mb-6 sm:gap-3 sm:text-2xl md:mb-8 md:gap-4 md:text-3xl lg:text-4xl">
+                    <span className="h-0.5 w-4 bg-neutral-900 sm:w-6 md:w-8" />
+                    {categoryName.toUpperCase()}
+                  </h3>
+                  <div className="space-y-3 sm:space-y-4 md:space-y-6">
+                    {items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="menu-item group cursor-pointer"
+                      >
+                        <div className="flex flex-col gap-2 border-b-2 border-neutral-900/20 pb-3 transition-colors duration-300 group-hover:border-neutral-900 sm:gap-3 sm:pb-4 md:flex-row md:items-start md:justify-between md:gap-4">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-display text-base font-bold text-neutral-900 transition-all duration-300 group-hover:tracking-wider sm:text-lg md:text-xl lg:text-2xl">
+                              {item.name}
+                            </h4>
+                            <p className="mt-0.5 text-xs leading-relaxed text-neutral-800/70 sm:mt-1 sm:text-sm md:text-base">
+                              {item.description}
+                            </p>
+                          </div>
+                          <span className="shrink-0 whitespace-nowrap font-display text-sm font-bold text-neutral-900 sm:text-base md:text-lg lg:text-xl">
+                            ETB {Number(item.price)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
-
-          {/* Drinks Column */}
-          <div>
-            <h3 className="mb-4 flex items-center gap-2 font-display text-xl font-black text-neutral-900 sm:mb-6 sm:gap-3 sm:text-2xl md:mb-8 md:gap-4 md:text-3xl lg:text-4xl">
-              <span className="h-0.5 w-4 bg-neutral-900 sm:w-6 md:w-8" />
-              DRINKS
-            </h3>
-            <div ref={drinkItemsRef} className="space-y-3 sm:space-y-4 md:space-y-6">
-              {drinks.map((item, index) => (
-                <div
-                  key={index}
-                  className="menu-item group cursor-pointer"
-                >
-                  <div className="flex flex-col gap-2 border-b-2 border-neutral-900/20 pb-3 transition-colors duration-300 group-hover:border-neutral-900 sm:gap-3 sm:pb-4 md:flex-row md:items-start md:justify-between md:gap-4">
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-display text-base font-bold text-neutral-900 transition-all duration-300 group-hover:tracking-wider sm:text-lg md:text-xl lg:text-2xl">
-                        {item.name}
-                      </h4>
-                      <p className="mt-0.5 text-xs leading-relaxed text-neutral-800/70 sm:mt-1 sm:text-sm md:text-base">
-                        {item.description}
-                      </p>
-                    </div>
-                    <span className="shrink-0 whitespace-nowrap font-display text-sm font-bold text-neutral-900 sm:text-base md:text-lg lg:text-xl">
-                      {item.price}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   )
