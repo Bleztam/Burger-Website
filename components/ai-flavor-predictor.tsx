@@ -16,6 +16,11 @@ export function AiFlavorPredictor() {
   
   const [loading, setLoading] = useState(false)
   const [recommendation, setRecommendation] = useState<any>(null)
+  const [mounted, setMounted] = useState(false)
+
+  const canProceedMood = mounted ? Boolean(mood) : false
+  const canProceedCraving = mounted ? Boolean(craving) : false
+  const canProceedEnergy = mounted ? Boolean(energy) : false
 
   // GSAP Animation refs
   const cardRef = useRef<HTMLDivElement>(null)
@@ -39,6 +44,11 @@ export function AiFlavorPredictor() {
     { name: 'steady', label: 'Steady State ⚡', desc: 'Cruising along, ready for standard satisfaction.' },
     { name: 'beast', label: 'Apex Beast 🦁', desc: 'High energy, ready to destroy a double patty!' },
   ]
+
+  // Run once on hydration to avoid SSR/client mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Animate card entrance when step changes
   useEffect(() => {
@@ -165,7 +175,7 @@ export function AiFlavorPredictor() {
 
                 <div className="mt-8 flex justify-end">
                   <button
-                    disabled={!mood}
+                    disabled={!canProceedMood}
                     onClick={() => setStep(2)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold text-xs tracking-wider uppercase cursor-pointer"
                   >
@@ -216,7 +226,7 @@ export function AiFlavorPredictor() {
                     Back
                   </button>
                   <button
-                    disabled={!craving}
+                    disabled={!canProceedCraving}
                     onClick={() => setStep(3)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold text-xs tracking-wider uppercase cursor-pointer"
                   >
@@ -267,7 +277,7 @@ export function AiFlavorPredictor() {
                     Back
                   </button>
                   <button
-                    disabled={!energy || loading}
+                    disabled={!canProceedEnergy || loading}
                     onClick={handleCalculate}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold text-xs tracking-wider uppercase cursor-pointer relative overflow-hidden"
                   >

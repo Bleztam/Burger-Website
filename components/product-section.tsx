@@ -110,7 +110,7 @@ export function ProductSection({
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-[100svh] overflow-hidden bg-background py-12 md:min-h-screen md:py-0"
+      className="relative overflow-hidden bg-background py-12 md:min-h-screen md:py-0"
     >
       <div className={cn(
         'flex h-full flex-col items-center justify-center gap-6 px-4 py-16 md:flex-row md:gap-8 md:px-8 md:py-0 lg:gap-12 lg:px-20',

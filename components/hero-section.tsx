@@ -144,7 +144,7 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative flex min-h-[100svh] items-center justify-start overflow-hidden px-4 py-12 md:min-h-screen md:px-8 md:py-20"
+      className="relative flex min-h-[75vh] items-center justify-start overflow-hidden px-4 py-10 md:min-h-screen md:px-8 md:py-20"
     >
       {/* Background gradient */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background via-background to-secondary/20" />
@@ -152,10 +152,10 @@ export function HeroSection() {
       {/* Transparent cutout chef + burger image - positioned absolutely */}
       <div
         ref={imageRef}
-        className="pointer-events-none absolute right-0 top-1/2 z-10 w-[40vw] max-w-[180px] -translate-y-1/2 md:right-[5%] md:w-[45vw] md:max-w-[550px]"
+        className="pointer-events-none relative z-10 mx-auto mb-8 w-full max-w-[240px] md:absolute md:right-0 md:top-1/2 md:mx-0 md:mb-0 md:w-[45vw] md:max-w-[550px] md:-translate-y-1/2"
       >
         <Image
-          src="/images/chef-burger-cutout.webp"
+          src="/images/chef-burger-cutout.jpg"
           alt="Chef holding triple smash burger"
           width={600}
           height={800}
