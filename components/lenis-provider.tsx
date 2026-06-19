@@ -1,6 +1,5 @@
 'use client'
 
-import { ReactLenis } from '@studio-freight/react-lenis'
 import type { ReactNode } from 'react'
 
 interface LenisProviderProps {
@@ -8,19 +7,5 @@ interface LenisProviderProps {
 }
 
 export function LenisProvider({ children }: LenisProviderProps) {
-  return (
-    <ReactLenis
-      root
-      options={{
-        lerp: 0.1,
-        duration: 1.2,
-        smoothWheel: true,
-        wheelMultiplier: 1,
-        touchMultiplier: 2,
-        infinite: false,
-      }}
-    >
-      {children as any}
-    </ReactLenis>
-  )
+  return <>{children}</>
 }

@@ -1,10 +1,9 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import gsap from 'gsap'
-import { useLenis } from '@studio-freight/react-lenis'
 
 const navLinks = [
   { label: 'PROMOTIONS', href: '/#promotions', isPromo: true },
@@ -20,7 +19,6 @@ export function Header() {
   const headerRef = useRef<HTMLElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
   const { cartCount } = useCart()
-  const lenis = useLenis()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -42,32 +40,26 @@ export function Header() {
   }, [cartCount])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    // Handle same-page hash anchors
-    if (href.startsWith('#') && lenis) {
-      e.preventDefault()
-      lenis.scrollTo(href, {
-        offset: -80,
-        duration: 1.2,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      })
+    const [targetPath, hash] = href.split('#')
+    const path = targetPath || '/'
+    const anchor = hash ? `#${hash}` : ''
+
+    if (!href.includes('#')) {
       return
     }
 
-    // Handle cross-page anchors like '/#menu-section'
-    if (href.includes('#') && lenis) {
+    if (path !== pathname) {
       e.preventDefault()
-      const [targetPath, hash] = href.split('#')
-      const path = targetPath || '/'
-      const anchor = `#${hash}`
+      router.push(`${path}${anchor}`)
+      return
+    }
 
-      if (path !== pathname) {
-        router.push(path)
-        // allow a tick for navigation to finish then scroll
-        setTimeout(() => {
-          lenis.scrollTo(anchor, { offset: -80, duration: 1.2 })
-        }, 80)
-      } else {
-        lenis.scrollTo(anchor, { offset: -80, duration: 1.2 })
+    e.preventDefault()
+    if (anchor) {
+      const target = document.querySelector(anchor) as HTMLElement | null
+      if (target) {
+        const y = target.getBoundingClientRect().top + window.scrollY - 80
+        window.scrollTo({ top: y, behavior: 'smooth' })
       }
     }
   }
