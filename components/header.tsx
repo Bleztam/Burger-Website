@@ -7,10 +7,10 @@ import gsap from 'gsap'
 import { useLenis } from '@studio-freight/react-lenis'
 
 const navLinks = [
-  { label: 'PROMOTIONS', href: '#promotions', isPromo: true },
-  { label: 'Menu', href: '#menu-section', isActive: true },
-  { label: 'Branches', href: '#branches' },
-  { label: 'Drinks', href: '#drinks' },
+  { label: 'PROMOTIONS', href: '/#promotions', isPromo: true },
+  { label: 'Menu', href: '/#menu-section', isActive: true },
+  { label: 'Branches', href: '/#branches' },
+  { label: 'Combo', href: '/#combo' },
   { label: 'Track', href: '/track' },
 ]
 
@@ -21,6 +21,8 @@ export function Header() {
   const badgeRef = useRef<HTMLSpanElement>(null)
   const { cartCount } = useCart()
   const lenis = useLenis()
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     // Cart badge pulse animation when items are added

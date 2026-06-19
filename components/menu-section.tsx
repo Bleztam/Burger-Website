@@ -307,7 +307,11 @@ export function MenuSection() {
             {sortedCategories.map((categoryName, colIdx) => {
               const items = categoriesMap[categoryName]
               return (
-                <div key={categoryName} className="category-column">
+                <div
+                  key={categoryName}
+                  id={categoryName === 'drinks' ? 'drinks' : undefined}
+                  className="category-column"
+                >
                   <h3 className="mb-4 flex items-center gap-2 font-display text-xl font-black text-neutral-900 sm:mb-6 sm:gap-3 sm:text-2xl md:mb-8 md:gap-4 md:text-3xl lg:text-4xl">
                     <span className="h-0.5 w-4 bg-neutral-900 sm:w-6 md:w-8" />
                     {categoryName.toUpperCase()}

@@ -148,6 +148,7 @@ export function PromoSpotlight() {
   return (
     <section
       ref={sectionRef}
+      id="promotions"
       className="relative min-h-[80vh] md:min-h-screen overflow-hidden bg-background py-12 md:py-0"
     >
       {/* Background grid pattern */}

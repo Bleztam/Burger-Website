@@ -536,7 +536,7 @@ export function RoadmapSection() {
   return (
     <section
       ref={sectionRef}
-      id="roadmap-section"
+      id="branches"
       className={`relative py-20 md:py-32 px-4 md:px-12 overflow-hidden transition-colors duration-500 ${
         isDarkMode ? 'dark bg-neutral-950 text-white' : 'bg-neutral-50 text-neutral-900'
       }`}

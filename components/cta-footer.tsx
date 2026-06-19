@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
@@ -9,56 +10,18 @@ if (typeof window !== 'undefined') {
 }
 
 export function CtaFooter() {
+  const router = useRouter()
   const sectionRef = useRef<HTMLElement>(null)
   const headingRef = useRef<HTMLDivElement>(null)
   const underlineRef = useRef<HTMLSpanElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const socialIconsRef = useRef<(HTMLAnchorElement | null)[]>([])
 
+
   useEffect(() => {
     if (!sectionRef.current) return
 
     const ctx = gsap.context(() => {
-      // Initial states
-      gsap.set(headingRef.current, { opacity: 0, y: 60 })
-      gsap.set(underlineRef.current, { scaleX: 0, transformOrigin: 'left center' })
-      gsap.set(buttonRef.current, { opacity: 0, y: 30 })
-
-      // Main timeline
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: 'top 85%',
-          toggleActions: 'play none none reverse',
-        },
-      })
-
-      tl.to(headingRef.current, {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-      })
-        .to(
-          underlineRef.current,
-          {
-            scaleX: 1,
-            duration: 0.6,
-            ease: 'power2.out',
-          },
-          '-=0.3'
-        )
-        .to(
-          buttonRef.current,
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.6,
-            ease: 'power3.out',
-          },
-          '-=0.3'
-        )
-
       // Social icon hover interactions - touch-friendly on mobile
       const mm = gsap.matchMedia()
       mm.add('(min-width: 768px)', () => {
@@ -108,6 +71,10 @@ export function CtaFooter() {
       duration: 0.3,
       ease: 'power2.inOut',
     })
+  }
+
+  const handleOrderClick = () => {
+    router.push('/order')
   }
 
   return (
@@ -161,6 +128,7 @@ export function CtaFooter() {
           {/* Order Delivery Button */}
           <button
             ref={buttonRef}
+            onClick={handleOrderClick}
             onMouseEnter={handleButtonEnter}
             onMouseLeave={handleButtonLeave}
             className="mt-6 rounded-full border-2 border-black bg-white px-6 py-2.5 font-display text-sm uppercase tracking-wide text-red-600 transition-transform hover:scale-105 sm:mt-8 sm:border-[2.5px] sm:px-10 sm:py-3 sm:text-base md:mt-14 md:border-[3px] md:px-14 md:py-5 md:text-xl"
