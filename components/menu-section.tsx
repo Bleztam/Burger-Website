@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { createClient } from '@/lib/supabase/client'
+import { useCart } from '@/components/cart-provider'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -103,6 +104,7 @@ const fallbackMenuItems: DBMenuItem[] = [
 export function MenuSection() {
   const [menuItems, setMenuItems] = useState<DBMenuItem[]>([])
   const [loading, setLoading] = useState(true)
+  const { addToCart } = useCart()
 
   const sectionRef = useRef<HTMLElement>(null)
   const graffitiRef = useRef<HTMLDivElement>(null)
@@ -316,18 +318,33 @@ export function MenuSection() {
                         key={item.id}
                         className="menu-item group cursor-pointer"
                       >
-                        <div className="flex flex-col gap-2 border-b-2 border-neutral-900/20 pb-3 transition-colors duration-300 group-hover:border-neutral-900 sm:gap-3 sm:pb-4 md:flex-row md:items-start md:justify-between md:gap-4">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-display text-base font-bold text-neutral-900 transition-all duration-300 group-hover:tracking-wider sm:text-lg md:text-xl lg:text-2xl">
-                              {item.name}
-                            </h4>
-                            <p className="mt-0.5 text-xs leading-relaxed text-neutral-800/70 sm:mt-1 sm:text-sm md:text-base">
-                              {item.description}
-                            </p>
+                        <div className="flex flex-col gap-2 border-b-2 border-neutral-900/20 pb-3 transition-colors duration-300 group-hover:border-neutral-900 sm:gap-3 sm:pb-4">
+                          <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-display text-base font-bold text-neutral-900 transition-all duration-300 group-hover:tracking-wider sm:text-lg md:text-xl lg:text-2xl">
+                                {item.name}
+                              </h4>
+                              <p className="mt-0.5 text-xs leading-relaxed text-neutral-800/70 sm:mt-1 sm:text-sm md:text-base">
+                                {item.description}
+                              </p>
+                            </div>
+                            <span className="shrink-0 whitespace-nowrap font-display text-sm font-bold text-neutral-900 sm:text-base md:text-lg lg:text-xl">
+                              ETB {Number(item.price)}
+                            </span>
                           </div>
-                          <span className="shrink-0 whitespace-nowrap font-display text-sm font-bold text-neutral-900 sm:text-base md:text-lg lg:text-xl">
-                            ETB {Number(item.price)}
-                          </span>
+                          <button
+                            onClick={() =>
+                              addToCart(
+                                item.id,
+                                item.name,
+                                Number(item.price),
+                                1
+                              )
+                            }
+                            className="w-full rounded-full bg-neutral-900 px-4 py-2 text-xs font-bold uppercase tracking-wider text-amber-400 transition-all duration-300 hover:bg-neutral-800 hover:shadow-lg sm:w-auto md:text-sm"
+                          >
+                            Add to cart
+                          </button>
                         </div>
                       </div>
                     ))}

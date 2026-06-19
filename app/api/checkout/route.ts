@@ -99,6 +99,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       order_id: orderId,
+      order_code: orderId.slice(-6).toUpperCase(),
       total_amount: totalAmount,
     })
   } catch (error: any) {

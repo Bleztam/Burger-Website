@@ -1,25 +1,30 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
 import gsap from 'gsap'
 import { useLenis } from '@studio-freight/react-lenis'
 
 const navLinks = [
   { label: 'PROMOTIONS', href: '#promotions', isPromo: true },
   { label: 'Menu', href: '#menu-section', isActive: true },
-  { label: 'Snacks', href: '#snacks' },
+  { label: 'Branches', href: '#branches' },
   { label: 'Drinks', href: '#drinks' },
+  { label: 'Track', href: '/track' },
 ]
+
+import { useCart } from '@/components/cart-provider'
 
 export function Header() {
   const headerRef = useRef<HTMLElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
-  const [cartCount] = useState(2)
+  const { cartCount } = useCart()
   const lenis = useLenis()
 
   useEffect(() => {
-    // Cart badge pulse animation on load
-    if (badgeRef.current) {
+    // Cart badge pulse animation when items are added
+    if (badgeRef.current && cartCount > 0) {
       gsap.fromTo(
         badgeRef.current,
         { scale: 1 },
@@ -29,20 +34,39 @@ export function Header() {
           ease: 'power2.inOut',
           repeat: 3,
           yoyo: true,
-          delay: 0.5,
         }
       )
     }
-  }, [])
+  }, [cartCount])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault()
-    if (lenis && href.startsWith('#')) {
+    // Handle same-page hash anchors
+    if (href.startsWith('#') && lenis) {
+      e.preventDefault()
       lenis.scrollTo(href, {
         offset: -80,
-        duration: 1.5,
+        duration: 1.2,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       })
+      return
+    }
+
+    // Handle cross-page anchors like '/#menu-section'
+    if (href.includes('#') && lenis) {
+      e.preventDefault()
+      const [targetPath, hash] = href.split('#')
+      const path = targetPath || '/'
+      const anchor = `#${hash}`
+
+      if (path !== pathname) {
+        router.push(path)
+        // allow a tick for navigation to finish then scroll
+        setTimeout(() => {
+          lenis.scrollTo(anchor, { offset: -80, duration: 1.2 })
+        }, 80)
+      } else {
+        lenis.scrollTo(anchor, { offset: -80, duration: 1.2 })
+      }
     }
   }
 
@@ -129,7 +153,8 @@ export function Header() {
           </button>
 
           {/* Shopping Bag Icon with Badge */}
-          <button
+          <Link
+            href="/order"
             className="relative text-white/70 hover:text-white transition-colors duration-200 flex-shrink-0"
             aria-label={`Shopping cart with ${cartCount} items`}
           >
@@ -149,13 +174,15 @@ export function Header() {
               <path d="M16 10a4 4 0 0 1-8 0" />
             </svg>
             {/* Cart Badge */}
-            <span
-              ref={badgeRef}
-              className="absolute -bottom-2 -right-2 md:-bottom-1 md:-right-1 w-4 h-4 md:w-4 md:h-4 bg-amber-500 text-neutral-950 text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0"
-            >
-              {cartCount}
-            </span>
-          </button>
+            {cartCount > 0 && (
+              <span
+                ref={badgeRef}
+                className="absolute -bottom-2 -right-2 md:-bottom-1 md:-right-1 w-4 h-4 md:w-4 md:h-4 bg-amber-500 text-neutral-950 text-[8px] md:text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0"
+              >
+                {cartCount}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
     </header>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Image from 'next/image'
@@ -11,6 +12,7 @@ if (typeof window !== 'undefined') {
 }
 
 export function HeroSection() {
+  const router = useRouter()
   const sectionRef = useRef<HTMLElement>(null)
   const titleLinesRef = useRef<(HTMLElement | null)[]>([])
   const imageRef = useRef<HTMLDivElement>(null)
@@ -207,8 +209,19 @@ export function HeroSection() {
           ref={ctaRef}
           className="flex flex-wrap gap-2 sm:gap-3 items-center md:gap-4 pt-2"
         >
-          <MagneticButton variant="primary">Order Now</MagneticButton>
-          <MagneticButton variant="outline">View Menu</MagneticButton>
+          <MagneticButton variant="primary" onClick={() => router.push('/order')}>
+            Order Now
+          </MagneticButton>
+          <MagneticButton
+            variant="outline"
+            onClick={() =>
+              document
+                .getElementById('menu-section')
+                ?.scrollIntoView({ behavior: 'smooth' })
+            }
+          >
+            View Menu
+          </MagneticButton>
         </div>
       </div>
 
