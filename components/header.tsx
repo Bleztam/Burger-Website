@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import gsap from 'gsap'
@@ -18,6 +18,7 @@ import { useCart } from '@/components/cart-provider'
 export function Header() {
   const headerRef = useRef<HTMLElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const { cartCount } = useCart()
   const router = useRouter()
   const pathname = usePathname()
@@ -40,6 +41,10 @@ export function Header() {
   }, [cartCount])
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (mobileOpen) {
+      setMobileOpen(false)
+    }
+
     const [targetPath, hash] = href.split('#')
     const path = targetPath || '/'
     const anchor = hash ? `#${hash}` : ''
@@ -70,37 +75,54 @@ export function Header() {
       className="fixed top-0 left-0 right-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-b border-border/30"
     >
       <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 lg:px-12 max-w-screen-2xl mx-auto w-full">
-        {/* Left/Center Navigation - Hidden on mobile, shown on desktop */}
-        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              onClick={(e) => handleNavClick(e, link.href)}
-              className={`relative text-xs lg:text-sm font-medium tracking-wide transition-opacity duration-200 group whitespace-nowrap ${
-                link.isPromo
-                  ? 'text-amber-500 hover:text-amber-400'
-                  : link.isActive
-                  ? 'text-white'
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              {link.label}
-              {/* Active indicator */}
-              {link.isActive && (
-                <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-amber-500" />
+        <div className="flex items-center gap-3 md:gap-6">
+          <button
+            type="button"
+            onClick={() => setMobileOpen((prev) => !prev)}
+            className="inline-flex items-center justify-center rounded-md border border-neutral-800 bg-neutral-950/80 p-2 text-white/80 transition-colors duration-200 hover:bg-neutral-900 hover:text-white md:hidden"
+            aria-expanded={mobileOpen}
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          >
+            <span className="sr-only">Toggle menu</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              {mobileOpen ? (
+                <path d="M18 6 6 18M6 6l12 12" />
+              ) : (
+                <>
+                  <path d="M4 7h16" />
+                  <path d="M4 12h16" />
+                  <path d="M4 17h16" />
+                </>
               )}
-              {/* Hover underline for non-active items */}
-              {!link.isActive && !link.isPromo && (
-                <span className="absolute -bottom-1 left-1/2 w-0 h-0.5 bg-white/50 transition-all duration-300 group-hover:left-0 group-hover:w-full" />
-              )}
-            </a>
-          ))}
-        </nav>
+            </svg>
+          </button>
 
-        {/* Mobile menu indicator - shown on mobile */}
-        <div className="md:hidden text-white/70 text-xs font-medium tracking-wide">
-          MENU
+          <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+            {navLinks.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className={`relative text-xs lg:text-sm font-medium tracking-wide transition-opacity duration-200 group whitespace-nowrap ${
+                  link.isPromo
+                    ? 'text-amber-500 hover:text-amber-400'
+                    : link.isActive
+                    ? 'text-white'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {link.label}
+                {/* Active indicator */}
+                {link.isActive && (
+                  <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-amber-500" />
+                )}
+                {/* Hover underline for non-active items */}
+                {!link.isActive && !link.isPromo && (
+                  <span className="absolute -bottom-1 left-1/2 w-0 h-0.5 bg-white/50 transition-all duration-300 group-hover:left-0 group-hover:w-full" />
+                )}
+              </a>
+            ))}
+          </nav>
         </div>
 
         {/* Right Utilities */}
@@ -177,6 +199,21 @@ export function Header() {
               </span>
             )}
           </Link>
+        </div>
+      </div>
+
+      <div className={`md:hidden overflow-hidden bg-neutral-950/95 border-t border-border/30 transition-[max-height] duration-300 ${mobileOpen ? 'max-h-80' : 'max-h-0'}`}>
+        <div className="flex flex-col gap-1 px-4 py-3">
+          {navLinks.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              onClick={(e) => handleNavClick(e, link.href)}
+              className="rounded-xl px-3 py-3 text-sm font-medium text-white/90 hover:bg-neutral-900 hover:text-white transition-colors duration-200"
+            >
+              {link.label}
+            </a>
+          ))}
         </div>
       </div>
     </header>

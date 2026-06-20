@@ -141,7 +141,8 @@ html.lenis body {
 
 /* Custom cursor styles */
 .magnetic-button {
-  cursor: none;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 /* Noise texture overlay */
