@@ -91,7 +91,7 @@ export function AiConciergeChatbot() {
   }, [isOpen])
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="pointer-events-none fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* 1. Glassmorphic Chat Window */}
       <div
         ref={chatWindowRef}
@@ -224,7 +224,7 @@ export function AiConciergeChatbot() {
       <button
         ref={toggleBtnRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 rounded-full bg-amber-500 text-black hover:bg-amber-400 flex items-center justify-center shadow-2xl transition-all duration-300 transform active:scale-95 hover:scale-105 cursor-pointer border-3 border-black group"
+        className="pointer-events-auto w-14 h-14 rounded-full bg-amber-500 text-black hover:bg-amber-400 flex items-center justify-center shadow-2xl transition-all duration-300 transform active:scale-95 hover:scale-105 cursor-pointer border-3 border-black group"
       >
         {isOpen ? <X size={22} /> : <MessageSquare size={22} className="group-hover:rotate-6 transition-transform" />}
       </button>
