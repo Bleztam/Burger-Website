@@ -95,7 +95,7 @@ export function AiConciergeChatbot() {
       {/* 1. Glassmorphic Chat Window */}
       <div
         ref={chatWindowRef}
-        className="w-[90vw] sm:w-[380px] h-[500px] bg-neutral-900/90 backdrop-blur-xl border border-neutral-800/80 rounded-2xl overflow-hidden shadow-2xl flex flex-col mb-4 pointer-events-none opacity-0"
+        className="w-[90vw] sm:w-[380px] h-[500px] bg-card/95 backdrop-blur-xl border border-border rounded-2xl overflow-hidden shadow-2xl flex flex-col mb-4 pointer-events-none opacity-0"
         style={{ transformOrigin: 'bottom right' }}
       >
         {/* Chat Window Header */}
@@ -127,7 +127,7 @@ export function AiConciergeChatbot() {
             <div className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
               <Bot size={12} className="text-amber-500" />
             </div>
-            <div className="p-3 rounded-2xl bg-neutral-800/60 border border-neutral-800 text-neutral-200 text-xs leading-relaxed">
+            <div className="p-3 rounded-2xl bg-secondary border border-border text-foreground text-xs leading-relaxed">
               Yo! I am your **Wolfsburger Concierge**. Ask me for menu suggestions, current pricing, nearest branch route, or let me add items directly to your cart for checkout! 🍔🔥
             </div>
           </div>
@@ -149,7 +149,7 @@ export function AiConciergeChatbot() {
                   className={`p-3 rounded-2xl text-xs leading-relaxed ${
                     isUser
                       ? 'bg-amber-500 text-black font-semibold'
-                      : 'bg-neutral-850 border border-neutral-800 text-neutral-250'
+                      : 'bg-secondary border border-border text-foreground'
                   }`}
                 >
                   {/* Render Message Parts */}
@@ -167,7 +167,7 @@ export function AiConciergeChatbot() {
                       const invocation = part as any
                       const { toolCallId, state } = invocation
                       return (
-                        <div key={toolCallId} className="mt-2 p-2 bg-neutral-900/60 border border-amber-500/30 rounded-lg flex items-center gap-2 text-[10px] text-amber-400">
+                        <div key={toolCallId} className="mt-2 p-2 bg-muted border border-amber-500/30 rounded-lg flex items-center gap-2 text-[10px] text-amber-500">
                           <ShoppingCart size={12} />
                           <span>
                             {state === 'result'
@@ -191,7 +191,7 @@ export function AiConciergeChatbot() {
               <div className="w-6 h-6 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <Bot size={12} className="text-amber-500 animate-pulse" />
               </div>
-              <div className="p-3 rounded-2xl bg-neutral-800/40 border border-neutral-800/40 text-neutral-400 text-xs flex items-center gap-1.5">
+              <div className="p-3 rounded-2xl bg-secondary/60 border border-border text-muted-foreground text-xs flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.3s]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-bounce [animation-delay:-0.15s]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-bounce" />
@@ -203,12 +203,12 @@ export function AiConciergeChatbot() {
         </div>
 
         {/* Input area */}
-        <form onSubmit={handleFormSubmit} className="p-4 border-t border-neutral-800/80 bg-neutral-950 flex gap-2">
+        <form onSubmit={handleFormSubmit} className="p-4 border-t border-border bg-popover flex gap-2">
           <input
             value={inputVal}
             onChange={(e) => setInputVal(e.target.value)}
             placeholder="I have ETB 150 and love spicy food..."
-            className="flex-1 bg-neutral-900 border border-neutral-850 rounded-xl px-4 py-2.5 text-xs text-neutral-200 placeholder-neutral-500 focus:outline-none focus:border-amber-500 transition-colors"
+            className="flex-1 bg-background border border-border rounded-xl px-4 py-2.5 text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-amber-500 transition-colors"
           />
           <button
             type="submit"

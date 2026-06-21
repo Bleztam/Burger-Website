@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { LenisProvider } from '@/components/lenis-provider'
 import { CartProvider } from '@/components/cart-provider'
 import { AiConciergeChatbot } from '@/components/ai-concierge-chatbot'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const inter = Inter({
@@ -58,14 +59,25 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${bebasNeue.variable} bg-background`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} ${bebasNeue.variable} bg-background`}
+    >
       <body className="font-sans antialiased noise-overlay">
-        <CartProvider>
-          <LenisProvider>
-            {children}
-            <AiConciergeChatbot />
-          </LenisProvider>
-        </CartProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <CartProvider>
+            <LenisProvider>
+              {children}
+              <AiConciergeChatbot />
+            </LenisProvider>
+          </CartProvider>
+        </ThemeProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

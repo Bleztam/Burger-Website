@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import gsap from 'gsap'
 
 const navLinks = [
@@ -19,9 +20,18 @@ export function Header() {
   const headerRef = useRef<HTMLElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { cartCount } = useCart()
+  const { resolvedTheme, setTheme } = useTheme()
   const router = useRouter()
   const pathname = usePathname()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const isDark = resolvedTheme === 'dark'
+  const toggleTheme = () => setTheme(isDark ? 'light' : 'dark')
 
   useEffect(() => {
     // Cart badge pulse animation when items are added
@@ -72,14 +82,14 @@ export function Header() {
   return (
     <header
       ref={headerRef}
-      className="fixed top-0 left-0 right-0 z-50 bg-neutral-950/95 backdrop-blur-sm border-b border-border/30"
+      className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/30"
     >
       <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 lg:px-12 max-w-screen-2xl mx-auto w-full">
         <div className="flex items-center gap-3 md:gap-6">
           <button
             type="button"
             onClick={() => setMobileOpen((prev) => !prev)}
-            className="inline-flex items-center justify-center rounded-md border border-neutral-800 bg-neutral-950/80 p-2 text-white/80 transition-colors duration-200 hover:bg-neutral-900 hover:text-white md:hidden"
+            className="inline-flex items-center justify-center rounded-md border border-border bg-card/80 p-2 text-foreground/80 transition-colors duration-200 hover:bg-secondary hover:text-foreground md:hidden"
             aria-expanded={mobileOpen}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           >
@@ -107,8 +117,8 @@ export function Header() {
                   link.isPromo
                     ? 'text-amber-500 hover:text-amber-400'
                     : link.isActive
-                    ? 'text-white'
-                    : 'text-white/60 hover:text-white'
+                    ? 'text-foreground'
+                    : 'text-foreground/60 hover:text-foreground'
                 }`}
               >
                 {link.label}
@@ -118,7 +128,7 @@ export function Header() {
                 )}
                 {/* Hover underline for non-active items */}
                 {!link.isActive && !link.isPromo && (
-                  <span className="absolute -bottom-1 left-1/2 w-0 h-0.5 bg-white/50 transition-all duration-300 group-hover:left-0 group-hover:w-full" />
+                  <span className="absolute -bottom-1 left-1/2 w-0 h-0.5 bg-foreground/50 transition-all duration-300 group-hover:left-0 group-hover:w-full" />
                 )}
               </a>
             ))}
@@ -127,30 +137,51 @@ export function Header() {
 
         {/* Right Utilities */}
         <div className="flex items-center gap-3 md:gap-6">
-          {/* Search Icon */}
+          {/* Theme Toggle (replaces search) */}
           <button
-            className="text-white/70 hover:text-white transition-colors duration-200 flex-shrink-0"
-            aria-label="Search"
+            type="button"
+            onClick={toggleTheme}
+            className="text-foreground/70 hover:text-foreground transition-colors duration-200 flex-shrink-0"
+            aria-label={mounted ? (isDark ? 'Switch to light mode' : 'Switch to dark mode') : 'Toggle theme'}
+            title="Toggle theme"
           >
-            <svg
-              width="18"
-              height="18"
-              className="md:w-[22px] md:h-[22px]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
+            {mounted && isDark ? (
+              /* Sun — shown in dark mode to switch to light */
+              <svg
+                width="18"
+                height="18"
+                className="md:w-[22px] md:h-[22px] text-amber-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+              </svg>
+            ) : (
+              /* Moon — shown in light mode to switch to dark */
+              <svg
+                width="18"
+                height="18"
+                className="md:w-[22px] md:h-[22px]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+              </svg>
+            )}
           </button>
 
           {/* User Profile Icon - hidden on mobile */}
           <button
-            className="hidden md:flex text-white/70 hover:text-white transition-colors duration-200 flex-shrink-0"
+            className="hidden md:flex text-foreground/70 hover:text-foreground transition-colors duration-200 flex-shrink-0"
             aria-label="User profile"
           >
             <svg
@@ -171,7 +202,7 @@ export function Header() {
           {/* Shopping Bag Icon with Badge */}
           <Link
             href="/order"
-            className="relative text-white/70 hover:text-white transition-colors duration-200 flex-shrink-0"
+            className="relative text-foreground/70 hover:text-foreground transition-colors duration-200 flex-shrink-0"
             aria-label={`Shopping cart with ${cartCount} items`}
           >
             <svg
@@ -202,14 +233,14 @@ export function Header() {
         </div>
       </div>
 
-      <div className={`md:hidden overflow-hidden bg-neutral-950/95 border-t border-border/30 transition-[max-height] duration-300 ${mobileOpen ? 'max-h-80' : 'max-h-0'}`}>
+      <div className={`md:hidden overflow-hidden bg-background/95 border-t border-border/30 transition-[max-height] duration-300 ${mobileOpen ? 'max-h-80' : 'max-h-0'}`}>
         <div className="flex flex-col gap-1 px-4 py-3">
           {navLinks.map((link) => (
             <a
               key={link.label}
               href={link.href}
               onClick={(e) => handleNavClick(e, link.href)}
-              className="rounded-xl px-3 py-3 text-sm font-medium text-white/90 hover:bg-neutral-900 hover:text-white transition-colors duration-200"
+              className="rounded-xl px-3 py-3 text-sm font-medium text-foreground/90 hover:bg-secondary hover:text-foreground transition-colors duration-200"
             >
               {link.label}
             </a>

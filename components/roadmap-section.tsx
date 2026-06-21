@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
+import { useTheme } from 'next-themes'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { createClient } from '@/lib/supabase/client'
@@ -73,7 +74,8 @@ const staticFallbackBranches: DBBranch[] = [
 ]
 
 export function RoadmapSection() {
-  const [isDarkMode, setIsDarkMode] = useState(true)
+  const { resolvedTheme } = useTheme()
+  const isDarkMode = resolvedTheme === 'dark'
   const isDarkModeRef = useRef(isDarkMode)
 
   useEffect(() => {
@@ -537,9 +539,7 @@ export function RoadmapSection() {
     <section
       ref={sectionRef}
       id="branches"
-      className={`relative py-20 md:py-32 px-4 md:px-12 overflow-hidden transition-colors duration-500 ${
-        isDarkMode ? 'dark bg-neutral-950 text-white' : 'bg-neutral-50 text-neutral-900'
-      }`}
+      className="relative py-20 md:py-32 px-4 md:px-12 overflow-hidden transition-colors duration-500 bg-background text-foreground"
     >
       {/* Section Header */}
       <div className="max-w-screen-xl mx-auto mb-12 md:mb-20 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -552,32 +552,8 @@ export function RoadmapSection() {
           </h2>
         </div>
 
-        {/* Location Permission Activator & Theme Toggle */}
+        {/* Location Permission Activator */}
         <div className="flex items-center gap-4 flex-wrap">
-          {/* Local Theme Toggle Button */}
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-neutral-300 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-900 text-neutral-700 dark:text-neutral-300 font-semibold transition-all duration-300 text-sm tracking-wide shadow-md group hover:scale-[1.03] active:scale-[0.98]"
-            title="Toggle Section Map Theme"
-          >
-            {isDarkMode ? (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-amber-500 animate-[spin_10s_linear_infinite]">
-                  <circle cx="12" cy="12" r="4"/>
-                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
-                </svg>
-                <span>Light Theme</span>
-              </>
-            ) : (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-indigo-500">
-                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-                </svg>
-                <span>Dark Theme</span>
-              </>
-            )}
-          </button>
-
           {/* Location Permission Activator */}
           <button
             onClick={requestLocation}

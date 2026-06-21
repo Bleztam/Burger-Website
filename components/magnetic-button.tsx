@@ -28,9 +28,9 @@ export function MagneticButton({
       className={cn(
         'magnetic-button relative overflow-hidden px-8 py-4 font-display text-lg uppercase tracking-wider rounded-full transition duration-300 will-change-transform hover:scale-[1.03] active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-amber-500/70',
         variant === 'primary' &&
-          'bg-accent text-neutral-950 hover:bg-neutral-950 hover:text-accent',
+          'bg-accent text-accent-foreground hover:bg-foreground hover:text-accent',
         variant === 'outline' &&
-          'border border-white bg-transparent text-white hover:bg-white hover:text-neutral-950',
+          'border border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background',
         className
       )}
     >

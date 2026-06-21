@@ -199,7 +199,7 @@ export function HeroSection() {
 
         <p
           ref={subtitleRef}
-          className="max-w-xs sm:max-w-sm md:max-w-md text-sm sm:text-base md:text-lg lg:text-xl text-white/70 leading-relaxed"
+          className="max-w-xs sm:max-w-sm md:max-w-md text-sm sm:text-base md:text-lg lg:text-xl text-foreground/70 leading-relaxed"
         >
           Authentic Brazilian street-style burgers. Smashed to perfection, loaded with flavor.
         </p>

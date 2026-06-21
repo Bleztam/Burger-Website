@@ -234,7 +234,7 @@ export function MenuSection() {
       className="relative overflow-hidden py-12 md:py-24 lg:py-32"
     >
       {/* Yellow Background Base */}
-      <div className="absolute inset-0 bg-amber-400" />
+      <div className="absolute inset-0 bg-amber-100 dark:bg-amber-400 transition-colors duration-500" />
 
       {/* Halftone Dot Grid Overlay */}
       <div

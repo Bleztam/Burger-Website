@@ -161,7 +161,7 @@ export function ProductSection({
           </h2>
 
           {/* Description */}
-          <p className="max-w-md text-sm leading-relaxed text-white/70 sm:text-base md:text-lg">
+          <p className="max-w-md text-sm leading-relaxed text-foreground/70 sm:text-base md:text-lg">
             {description}
           </p>
 
