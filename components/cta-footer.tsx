@@ -80,7 +80,7 @@ export function CtaFooter() {
   return (
     <section ref={sectionRef} className="relative overflow-hidden">
       {/* Upper CTA Banner - Yellow with halftone */}
-      <div className="relative bg-amber-100 dark:bg-amber-400 px-4 py-12 sm:px-6 sm:py-16 md:py-28 transition-colors duration-500">
+      <div className="relative bg-amber-400 px-4 py-12 sm:px-6 sm:py-16 md:py-28">
         {/* Halftone overlay */}
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.08]"
@@ -139,13 +139,13 @@ export function CtaFooter() {
       </div>
 
       {/* Lower Red Footer Bar */}
-      <footer className="relative border-t border-red-200 dark:border-black bg-red-50 dark:bg-red-600 px-4 py-6 sm:px-6 md:py-10 transition-colors duration-500">
+      <footer className="relative border-t border-black bg-red-600 px-4 py-6 sm:px-6 md:py-10">
         <div className="mx-auto flex max-w-7xl flex-col items-center gap-4 sm:gap-6 md:gap-8 md:flex-row md:justify-between">
           {/* Left - Address */}
-          <p className="text-center font-display text-xs uppercase italic leading-tight text-red-900 dark:text-white sm:text-sm md:text-left md:text-base">
+          <p className="text-center font-display text-xs uppercase italic leading-tight text-white sm:text-sm md:text-left md:text-base">
             Dr. Flavio Zetola Street, 371
             <br />
-            <span className="text-red-800/80 dark:text-white/80 text-[11px] sm:text-xs md:text-sm">São José dos Pinhais</span>
+            <span className="text-white/80 text-[11px] sm:text-xs md:text-sm">São José dos Pinhais</span>
           </p>
 
           {/* Center - IN-JOY Logo */}
@@ -206,14 +206,14 @@ export function CtaFooter() {
             <a
               ref={(el) => { socialIconsRef.current[0] = el }}
               href="#"
-              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-red-900/50 text-red-900 transition-colors hover:border-red-900 dark:border-white/80 dark:text-white dark:hover:border-white sm:h-9 sm:w-9 md:h-10 md:w-10"
+              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/80 transition-colors hover:border-white sm:h-9 sm:w-9 md:h-10 md:w-10"
               aria-label="WhatsApp"
             >
               <svg
                 viewBox="0 0 24 24"
                 className="h-4 w-4 sm:h-5 sm:w-5"
                 fill="none"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -226,14 +226,14 @@ export function CtaFooter() {
             <a
               ref={(el) => { socialIconsRef.current[1] = el }}
               href="#"
-              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-red-900/50 text-red-900 transition-colors hover:border-red-900 dark:border-white/80 dark:text-white dark:hover:border-white sm:h-9 sm:w-9 md:h-10 md:w-10"
+              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/80 transition-colors hover:border-white sm:h-9 sm:w-9 md:h-10 md:w-10"
               aria-label="Facebook"
             >
               <svg
                 viewBox="0 0 24 24"
                 className="h-4 w-4 sm:h-5 sm:w-5"
                 fill="none"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -246,14 +246,14 @@ export function CtaFooter() {
             <a
               ref={(el) => { socialIconsRef.current[2] = el }}
               href="#"
-              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-red-900/50 text-red-900 transition-colors hover:border-red-900 dark:border-white/80 dark:text-white dark:hover:border-white sm:h-9 sm:w-9 md:h-10 md:w-10"
+              className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white/80 transition-colors hover:border-white sm:h-9 sm:w-9 md:h-10 md:w-10"
               aria-label="Instagram"
             >
               <svg
                 viewBox="0 0 24 24"
                 className="h-4 w-4 sm:h-5 sm:w-5"
                 fill="none"
-                stroke="currentColor"
+                stroke="white"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -267,7 +267,7 @@ export function CtaFooter() {
         </div>
 
         {/* Copyright */}
-        <p className="mt-4 text-center text-[10px] text-red-900/60 dark:text-white/60 sm:mt-5 sm:text-xs">
+        <p className="mt-4 text-center text-[10px] text-white/60 sm:mt-5 sm:text-xs">
           &copy; {new Date().getFullYear()} IN-JOY. All rights reserved.
         </p>
       </footer>

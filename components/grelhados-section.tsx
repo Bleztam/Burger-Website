@@ -137,7 +137,7 @@ export function GrelhadosSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-[80vh] overflow-hidden bg-red-50 dark:bg-red-600 py-12 sm:py-16 md:min-h-screen md:py-20 transition-colors duration-500"
+      className="relative min-h-[80vh] overflow-hidden bg-red-600 py-12 sm:py-16 md:min-h-screen md:py-20"
     >
       {/* Halftone dot pattern overlay */}
       <div
@@ -175,7 +175,7 @@ export function GrelhadosSection() {
         className="absolute left-0 top-1/4 z-20 -translate-y-1/2 sm:top-1/3 md:top-1/3"
       >
         <h2
-          className="font-display text-[18vw] font-black uppercase leading-none text-red-700 dark:text-white sm:text-[16vw] md:text-[18vw]"
+          className="font-display text-[18vw] font-black uppercase leading-none text-white sm:text-[16vw] md:text-[18vw]"
           style={{
             textShadow: '4px 4px 0 rgba(0,0,0,0.3)',
             WebkitTextStroke: '2px rgba(0,0,0,0.1)',
@@ -191,7 +191,7 @@ export function GrelhadosSection() {
         className="absolute bottom-1/4 right-0 z-20 translate-y-1/2 sm:bottom-1/3 md:bottom-1/3"
       >
         <h2
-          className="font-display text-[18vw] font-black uppercase leading-none text-red-700 dark:text-white sm:text-[16vw] md:text-[18vw]"
+          className="font-display text-[18vw] font-black uppercase leading-none text-white sm:text-[16vw] md:text-[18vw]"
           style={{
             textShadow: '4px 4px 0 rgba(0,0,0,0.3)',
             WebkitTextStroke: '2px rgba(0,0,0,0.1)',
